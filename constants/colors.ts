@@ -1,0 +1,20 @@
+export const C = {
+  bg: "#0D0D0D",
+  surface: "#1A1A1A",
+  surface2: "#222222",
+  surface3: "#2A2A2A",
+  border: "#2E2E2E",
+  accent: "#C8FF00",       // neon yellow-green
+  accentDim: "#C8FF0022",
+  text: "#FFFFFF",
+  textSec: "#888888",
+  textDim: "#555555",
+  purple: "#7C5CBF",
+  purpleDim: "#7C5CBF33",
+  orange: "#FF6B35",
+  orangeDim: "#FF6B3522",
+  pink: "#FF4D8D",
+  pinkDim: "#FF4D8D22",
+  teal: "#00D4AA",
+  tealDim: "#00D4AA22",
+} as const;
