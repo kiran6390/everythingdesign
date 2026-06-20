@@ -20,6 +20,7 @@ export type Happening = {
   host: string;
   description: string;
   tags: string[];
+  image?: string; // cover photo; user check-ins fall back to emoji
   mine?: boolean; // true if the signed-in user created it
 };
 
@@ -63,7 +64,23 @@ export const TIME_FILTERS: { key: TimeBucket; label: string }[] = [
   { key: "weekend", label: "Weekend" },
 ];
 
-export const HAPPENINGS: Happening[] = [
+const U = (id: string) => `https://images.unsplash.com/${id}?w=800&q=70&auto=format&fit=crop`;
+const IMAGES: Record<string, string> = {
+  "1": U("photo-1517457373958-b7bdd4587205"), // rooftop
+  "2": U("photo-1470229722913-7c0e2dbbafd3"), // live music
+  "3": U("photo-1504674900247-0877df9cc836"), // food
+  "4": U("photo-1531058020387-3be344556be6"), // art bazaar
+  "5": U("photo-1485965120184-e220f721d03e"), // cycling
+  "6": U("photo-1585699324551-f6c309eedeca"), // comedy
+  "7": U("photo-1507525428034-b723cf961d3e"), // beach
+  "8": U("photo-1511192336575-5a79af67a629"), // jazz
+  "9": U("photo-1565123409695-7b5ef63a2efb"), // food truck
+  "10": U("photo-1566737236500-c8ac43014a67"), // gallery night
+  "11": U("photo-1599447421416-3414500d18a5"), // yoga
+  "12": U("photo-1545128485-c400e7702796"), // techno
+};
+
+const BASE_HAPPENINGS: Happening[] = [
   {
     id: "1",
     title: "Rooftop Sundowner & House DJ",
@@ -292,6 +309,21 @@ export const HAPPENINGS: Happening[] = [
       "International techno headliner with local support till late. Dark room, big sound system. Doors at 11, peaks around 2.",
     tags: ["Techno", "Club", "Late Night"],
   },
+];
+
+export const HAPPENINGS: Happening[] = BASE_HAPPENINGS.map((h) => ({
+  ...h,
+  image: IMAGES[h.id],
+}));
+
+export type Club = { id: string; name: string; area: string; rating: number; image: string };
+export const CLUBS: Club[] = [
+  { id: "c1", name: "Kitty Su", area: "Lower Parel", rating: 4.7, image: U("photo-1545128485-c400e7702796") },
+  { id: "c2", name: "antiSOCIAL", area: "Lower Parel", rating: 4.6, image: U("photo-1470229722913-7c0e2dbbafd3") },
+  { id: "c3", name: "Bonobo", area: "Bandra", rating: 4.5, image: U("photo-1566737236500-c8ac43014a67") },
+  { id: "c4", name: "Bay View Rooftop", area: "Bandra", rating: 4.8, image: U("photo-1517457373958-b7bdd4587205") },
+  { id: "c5", name: "The Blue Room", area: "Powai", rating: 4.4, image: U("photo-1511192336575-5a79af67a629") },
+  { id: "c6", name: "Loft 38", area: "Andheri", rating: 4.5, image: U("photo-1554118811-1e0d58224f24") },
 ];
 
 export const PEOPLE: Person[] = [

@@ -1,16 +1,19 @@
+// Dark "music app" theme — near-black surfaces, neon-lime accent (black text on it).
 export const C = {
-  bg: "#0D0D0D",
-  surface: "#1A1A1A",
-  surface2: "#222222",
-  surface3: "#2A2A2A",
-  border: "#2E2E2E",
-  accent: "#C8FF00",       // neon yellow-green
+  bg: "#0D0D0F",
+  surface: "#1A1A1D",      // cards, pills, circle buttons
+  surface2: "#232327",
+  surface3: "#2C2C31",
+  border: "#2A2A2E",
+  accent: "#C8FF00",       // neon lime — fills (active pill, nav, FAB)
   accentDim: "#C8FF0022",
+  onAccent: "#000000",     // text/icons on the lime accent
   text: "#FFFFFF",
-  textSec: "#888888",
-  textDim: "#555555",
-  purple: "#7C5CBF",
-  purpleDim: "#7C5CBF33",
+  textSec: "#9A9AA0",
+  textDim: "#5C5C62",
+  // category tints
+  purple: "#9B7CE0",
+  purpleDim: "#9B7CE022",
   orange: "#FF6B35",
   orangeDim: "#FF6B3522",
   pink: "#FF4D8D",

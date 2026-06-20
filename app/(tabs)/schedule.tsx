@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -27,7 +27,7 @@ export default function SavedScreen() {
         <Text style={{ fontSize: 26, fontWeight: "900", color: C.text }}>Your plans</Text>
 
         {/* Toggle */}
-        <View style={{ flexDirection: "row", backgroundColor: C.surface, borderRadius: 14, padding: 4, gap: 4 }}>
+        <View style={{ flexDirection: "row", backgroundColor: C.surface2, borderRadius: 14, padding: 4, gap: 4 }}>
           {TABS.map((t) => (
             <Pressable
               key={t}
@@ -64,16 +64,20 @@ export default function SavedScreen() {
                 onPress={() => router.push(`/happening/${item.id}`)}
                 style={{ backgroundColor: C.surface, borderRadius: 18, padding: 16, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.border, borderLeftWidth: 4, borderLeftColor: item.color }}
               >
-                <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 24 }}>{item.emoji}</Text>
-                </View>
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={{ width: 48, height: 48, borderRadius: 14 }} />
+                ) : (
+                  <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 24 }}>{item.emoji}</Text>
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }} numberOfLines={1}>{item.title}</Text>
                   <Text style={{ fontSize: 12, color: C.textSec, marginTop: 4 }}>{item.when} · {item.neighborhood}</Text>
                 </View>
                 {tab === "Saved" && (
                   <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
-                    <Ionicons name="bookmark" size={18} color={C.accent} />
+                    <Ionicons name="heart" size={18} color="#FF4D6D" />
                   </Pressable>
                 )}
               </Pressable>

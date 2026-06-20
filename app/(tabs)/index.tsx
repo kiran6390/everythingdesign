@@ -1,87 +1,83 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Image, ImageBackground, Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { C } from "@/constants/colors";
-import { HAPPENINGS, CATEGORIES, TIME_FILTERS, type TimeBucket, type Happening } from "@/data/happenings";
+import { HAPPENINGS, CLUBS, TIME_FILTERS, type TimeBucket, type Happening } from "@/data/happenings";
 import { useStore } from "@/hooks/use-store";
 import { toggleSave, detectLocation } from "@/utils/store";
+import CardStack from "@/components/CardStack";
 
-function HappeningCard({ item, featured }: { item: Happening; featured?: boolean }) {
+function BigCard({ item }: { item: Happening }) {
   const store = useStore();
   const isSaved = store.saved.includes(item.id);
   const isGoing = store.going.includes(item.id);
-
-  if (featured) {
-    return (
-      <Pressable
-        onPress={() => router.push(`/happening/${item.id}`)}
-        style={{ backgroundColor: C.accent, borderRadius: 24, padding: 20, gap: 14 }}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-            <View style={{ backgroundColor: "#000", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
-              <Text style={{ fontSize: 11, fontWeight: "800", color: C.accent }}>🔥 POPPING NOW</Text>
-            </View>
-          </View>
-          <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
-            <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={22} color="#000" />
-          </Pressable>
-        </View>
-        <Text style={{ fontSize: 26, fontWeight: "900", color: "#000", lineHeight: 30 }}>{item.title}</Text>
-        <Text style={{ fontSize: 13, fontWeight: "700", color: "#333" }}>
-          {item.venue} · {item.neighborhood}
-        </Text>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#000" }}>
-            {item.when}   ·   {item.price}
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#000", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
-            <Ionicons name="people" size={13} color={C.accent} />
-            <Text style={{ fontSize: 12, fontWeight: "800", color: C.accent }}>{item.hype + (isGoing ? 1 : 0)} going</Text>
-          </View>
-        </View>
-      </Pressable>
-    );
-  }
+  const going = item.hype + (isGoing ? 1 : 0);
 
   return (
-    <Pressable
-      onPress={() => router.push(`/happening/${item.id}`)}
-      style={{ backgroundColor: C.surface, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: C.border }}
-    >
-      <View style={{ flexDirection: "row", gap: 14 }}>
-        <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <View style={{ backgroundColor: item.color + "22", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-              <Text style={{ fontSize: 10, fontWeight: "800", color: item.color }}>{item.category.toUpperCase()}</Text>
-            </View>
-            <Text style={{ fontSize: 11, color: C.textDim }}>·  {item.vibe}</Text>
+    <Pressable onPress={() => router.push(`/happening/${item.id}`)} style={{ borderRadius: 28, overflow: "hidden", height: 380, backgroundColor: C.surface }}>
+      {item.image ? (
+        <ImageBackground source={{ uri: item.image }} style={{ flex: 1 }}>
+          <Heart saved={isSaved} onPress={() => toggleSave(item.id)} />
+          <LinearGradient colors={["rgba(0,0,0,0.25)", "transparent", "rgba(0,0,0,0.9)"]} locations={[0, 0.4, 1]} style={{ flex: 1, justifyContent: "flex-end", padding: 18 }}>
+            <Overlay item={item} going={going} />
+          </LinearGradient>
+        </ImageBackground>
+      ) : (
+        <View style={{ flex: 1, backgroundColor: item.color + "22" }}>
+          <Heart saved={isSaved} onPress={() => toggleSave(item.id)} />
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ fontSize: 80 }}>{item.emoji}</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: C.text }} numberOfLines={1}>{item.title}</Text>
-          <Text style={{ fontSize: 12, color: C.textSec }} numberOfLines={1}>
-            {item.venue} · {item.neighborhood}
-          </Text>
-        </View>
-        <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
-          <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={20} color={isSaved ? C.accent : C.textSec} />
-        </Pressable>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 }}>
-        <Text style={{ fontSize: 12, fontWeight: "700", color: C.text }}>{item.when}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Ionicons name="people-outline" size={13} color={C.textSec} />
-            <Text style={{ fontSize: 12, color: C.textSec }}>{item.hype + (isGoing ? 1 : 0)}</Text>
+          <View style={{ padding: 18 }}>
+            <Text style={{ color: C.textSec, fontSize: 13, fontWeight: "600" }}>{item.neighborhood} · {item.category}</Text>
+            <Text style={{ color: C.text, fontSize: 22, fontWeight: "900", marginTop: 4 }}>{item.title}</Text>
+            <Text style={{ color: C.textSec, fontSize: 12, marginTop: 6 }}>{item.when} · ★ {going} going · {item.price || "Free"}</Text>
           </View>
-          <Text style={{ fontSize: 12, fontWeight: "800", color: item.price === "Free" ? C.teal : C.text }}>{item.price}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function Heart({ saved, onPress }: { saved: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={10} style={{ position: "absolute", top: 16, right: 16, zIndex: 2, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" }}>
+      <Ionicons name={saved ? "heart" : "heart-outline"} size={20} color={saved ? "#FF4D6D" : "#fff"} />
+    </Pressable>
+  );
+}
+
+function Overlay({ item, going }: { item: Happening; going: number }) {
+  return (
+    <>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.accent }} />
+        <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "600" }}>{item.neighborhood} · {item.category}</Text>
+      </View>
+      <Text style={{ color: "#fff", fontSize: 26, fontWeight: "900", lineHeight: 30 }}>{item.title}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+        <View>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "700" }}>{item.when}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2 }}>★ {going} going · {item.price || "Free"}</Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.accent, paddingLeft: 16, paddingRight: 5, paddingVertical: 5, borderRadius: 24 }}>
+          <Text style={{ color: "#000", fontWeight: "800", fontSize: 14 }}>View</Text>
+          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "#000", alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="arrow-forward" size={16} color={C.accent} />
+          </View>
         </View>
       </View>
+    </>
+  );
+}
+
+function CircleBtn({ icon, onPress }: { icon: any; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surface, alignItems: "center", justifyContent: "center" }}>
+      <Ionicons name={icon} size={19} color={C.text} />
     </Pressable>
   );
 }
@@ -90,95 +86,58 @@ export default function NowScreen() {
   const insets = useSafeAreaInsets();
   const store = useStore();
   const [time, setTime] = useState<TimeBucket>("tonight");
-  const [cat, setCat] = useState("All");
 
-  useEffect(() => {
-    detectLocation();
-  }, []);
+  useEffect(() => { detectLocation(); }, []);
 
   const all = useMemo(() => [...store.shared, ...HAPPENINGS], [store.shared]);
-
   const filtered = all.filter((h) => {
     const matchTime = h.timeBucket === time;
-    const matchCat = cat === "All" || h.category === cat;
-    return matchTime && matchCat;
+    return matchTime;
   });
-
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 24, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View>
-            <Text style={{ fontSize: 13, color: C.textSec, fontWeight: "600" }}>Hey {store.userName} 👋</Text>
-            <Text style={{ fontSize: 28, fontWeight: "900", color: C.text }}>What's popping</Text>
+        {/* Header: avatar + greeting + search/heart, all on one line */}
+        <View style={{ paddingTop: insets.top + 14, paddingHorizontal: 24, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.accent, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 18, fontWeight: "900", color: "#000" }}>{(store.userName[0] || "?").toUpperCase()}</Text>
+            </View>
+            <Text style={{ fontSize: 22, fontWeight: "900", color: C.text }} numberOfLines={1}>Hi, {store.userName}</Text>
           </View>
-          <Pressable
-            onPress={() => router.push("/(tabs)/explore")}
-            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.border }}
-          >
-            <Ionicons name="search" size={20} color={C.text} />
-          </Pressable>
-        </View>
-
-        {/* Location pill */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: C.accent + "18", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: C.accent + "33" }}>
-            <Ionicons name="location" size={13} color={C.accent} />
-            <Text style={{ fontSize: 12, fontWeight: "700", color: C.accent }}>Mumbai · {store.neighborhood}</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <CircleBtn icon="search" onPress={() => router.push("/(tabs)/explore")} />
+            <CircleBtn icon="heart-outline" onPress={() => router.push("/(tabs)/schedule")} />
           </View>
         </View>
 
-        {/* Time filter */}
-        <View style={{ flexDirection: "row", paddingHorizontal: 24, gap: 8, marginBottom: 16 }}>
+        {/* Clubs deck */}
+        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 24 }}>Clubs tonight</Text>
+        <CardStack items={CLUBS} />
+
+        {/* What's popping */}
+        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 10, marginBottom: 12 }}>What's popping</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }} style={{ marginBottom: 16 }}>
           {TIME_FILTERS.map((t) => {
             const active = t.key === time;
             return (
-              <Pressable
-                key={t.key}
-                onPress={() => setTime(t.key)}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: "center", backgroundColor: active ? C.text : C.surface, borderWidth: 1, borderColor: active ? C.text : C.border }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: "800", color: active ? C.bg : C.textSec }}>{t.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Category pills */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }} contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}>
-          {CATEGORIES.map((c) => {
-            const active = c === cat;
-            return (
-              <Pressable
-                key={c}
-                onPress={() => setCat(c)}
-                style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: active ? C.accent : C.surface, borderWidth: 1, borderColor: active ? C.accent : C.border }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: "700", color: active ? "#000" : C.textSec }}>{c}</Text>
+              <Pressable key={t.key} onPress={() => setTime(t.key)} style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 22, backgroundColor: active ? C.accent : C.surface }}>
+                <Text style={{ fontSize: 14, fontWeight: "700", color: active ? "#000" : C.textSec }}>{t.label}</Text>
               </Pressable>
             );
           })}
         </ScrollView>
 
-        {/* Feed */}
-        <View style={{ paddingHorizontal: 20, gap: 14 }}>
+        <View style={{ paddingHorizontal: 24, gap: 18 }}>
           {filtered.length === 0 ? (
-            <View style={{ alignItems: "center", paddingVertical: 60, gap: 8 }}>
+            <View style={{ alignItems: "center", paddingVertical: 50, gap: 8 }}>
               <Text style={{ fontSize: 40 }}>🤷</Text>
               <Text style={{ fontSize: 16, fontWeight: "700", color: C.text }}>Nothing here yet</Text>
-              <Text style={{ fontSize: 13, color: C.textSec }}>Try another time or category — or share something!</Text>
+              <Text style={{ fontSize: 13, color: C.textSec }}>Try another time or category.</Text>
             </View>
           ) : (
-            <>
-              {featured && <HappeningCard item={featured} featured />}
-              {rest.map((item) => (
-                <HappeningCard key={item.id} item={item} />
-              ))}
-            </>
+            filtered.map((item) => <BigCard key={item.id} item={item} />)
           )}
         </View>
       </ScrollView>

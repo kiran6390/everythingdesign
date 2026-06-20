@@ -1,0 +1,12 @@
+[build]
+  command = "npx expo export --platform web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback so deep links (e.g. /happening/1) resolve to the app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

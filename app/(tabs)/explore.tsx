@@ -1,4 +1,4 @@
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { FlatList, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,7 +34,7 @@ export default function ExploreScreen() {
         <Text style={{ fontSize: 26, fontWeight: "900", color: C.text }}>Explore Mumbai</Text>
 
         {/* Search */}
-        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.surface, borderRadius: 14, paddingHorizontal: 14, gap: 10, borderWidth: 1, borderColor: C.border }}>
+        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.surface2, borderRadius: 16, paddingHorizontal: 16, gap: 10 }}>
           <Ionicons name="search" size={18} color={C.textSec} />
           <TextInput
             value={query}
@@ -51,7 +51,7 @@ export default function ExploreScreen() {
             <Pressable
               key={n}
               onPress={() => setArea(n)}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: area === n ? C.accent : C.surface, borderWidth: 1, borderColor: area === n ? C.accent : C.border }}
+              style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 22, backgroundColor: area === n ? C.accent : C.surface2 }}
             >
               <Text style={{ fontSize: 13, fontWeight: "700", color: area === n ? "#000" : C.textSec }}>{n}</Text>
             </Pressable>
@@ -76,11 +76,15 @@ export default function ExploreScreen() {
           return (
             <Pressable
               onPress={() => router.push(`/happening/${item.id}`)}
-              style={{ backgroundColor: C.surface, borderRadius: 20, padding: 18, flexDirection: "row", gap: 16, alignItems: "center", borderWidth: 1, borderColor: C.border }}
+              style={{ backgroundColor: C.surface2, borderRadius: 20, padding: 14, flexDirection: "row", gap: 14, alignItems: "center" }}
             >
-              <View style={{ width: 64, height: 64, borderRadius: 18, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 32 }}>{item.emoji}</Text>
-              </View>
+              {item.image ? (
+                <Image source={{ uri: item.image }} style={{ width: 64, height: 64, borderRadius: 18 }} />
+              ) : (
+                <View style={{ width: 64, height: 64, borderRadius: 18, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 32 }}>{item.emoji}</Text>
+                </View>
+              )}
               <View style={{ flex: 1, gap: 6 }}>
                 <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }} numberOfLines={1}>{item.title}</Text>
                 <Text style={{ fontSize: 12, color: C.textSec }} numberOfLines={1}>{item.venue} · {item.neighborhood}</Text>
@@ -92,7 +96,7 @@ export default function ExploreScreen() {
                 </View>
               </View>
               <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
-                <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={20} color={isSaved ? C.accent : C.textDim} />
+                <Ionicons name={isSaved ? "heart" : "heart-outline"} size={20} color={isSaved ? "#FF4D6D" : C.textDim} />
               </Pressable>
             </Pressable>
           );

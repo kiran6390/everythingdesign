@@ -135,8 +135,8 @@ export default function CheckinScreen() {
             </View>
           ) : (
             venues.map((v) => (
-              <View key={v.id} style={{ backgroundColor: C.surface, borderRadius: 18, padding: 16, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.border }}>
-                <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: C.accent + "22", alignItems: "center", justifyContent: "center" }}>
+              <View key={v.id} style={{ backgroundColor: C.surface2, borderRadius: 18, padding: 14, flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: C.accentDim, alignItems: "center", justifyContent: "center" }}>
                   <Text style={{ fontSize: 24 }}>{venueEmoji(v.type)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
