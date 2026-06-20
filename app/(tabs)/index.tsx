@@ -1,315 +1,185 @@
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "@/constants/colors";
-import { COURSES } from "@/data/courses";
+import { HAPPENINGS, CATEGORIES, TIME_FILTERS, type TimeBucket, type Happening } from "@/data/happenings";
 import { useStore } from "@/hooks/use-store";
+import { toggleSave, detectLocation } from "@/utils/store";
 
-const CATEGORIES = ["All", "UI/UX", "Type", "Color", "Tools", "Brand"];
+function HappeningCard({ item, featured }: { item: Happening; featured?: boolean }) {
+  const store = useStore();
+  const isSaved = store.saved.includes(item.id);
+  const isGoing = store.going.includes(item.id);
 
-const MOCK_AVATARS = ["A", "B", "C", "D", "E"];
-const AVATAR_COLORS = [C.purple, C.orange, C.pink, C.teal, "#888"];
-
-function OverlappingAvatars({ count = 3 }: { count?: number }) {
-  const shown = MOCK_AVATARS.slice(0, 3);
-  const extra = count - 3;
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      {shown.map((letter, i) => (
-        <View
-          key={i}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: AVATAR_COLORS[i],
-            alignItems: "center",
-            justifyContent: "center",
-            marginLeft: i === 0 ? 0 : -10,
-            borderWidth: 2,
-            borderColor: C.accent, // border matches card bg
-          }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: "800", color: "#000" }}>
-            {letter}
-          </Text>
+  if (featured) {
+    return (
+      <Pressable
+        onPress={() => router.push(`/happening/${item.id}`)}
+        style={{ backgroundColor: C.accent, borderRadius: 24, padding: 20, gap: 14 }}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+            <View style={{ backgroundColor: "#000", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
+              <Text style={{ fontSize: 11, fontWeight: "800", color: C.accent }}>🔥 POPPING NOW</Text>
+            </View>
+          </View>
+          <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
+            <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={22} color="#000" />
+          </Pressable>
         </View>
-      ))}
-      {extra > 0 && (
-        <View
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: "#222",
-            alignItems: "center",
-            justifyContent: "center",
-            marginLeft: -10,
-            borderWidth: 2,
-            borderColor: C.accent,
-          }}
-        >
-          <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFF" }}>
-            +{extra}
+        <Text style={{ fontSize: 26, fontWeight: "900", color: "#000", lineHeight: 30 }}>{item.title}</Text>
+        <Text style={{ fontSize: 13, fontWeight: "700", color: "#333" }}>
+          {item.venue} · {item.neighborhood}
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: "#000" }}>
+            {item.when}   ·   {item.price}
           </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#000", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+            <Ionicons name="people" size={13} color={C.accent} />
+            <Text style={{ fontSize: 12, fontWeight: "800", color: C.accent }}>{item.hype + (isGoing ? 1 : 0)} going</Text>
+          </View>
         </View>
-      )}
-    </View>
-  );
-}
-
-function CourseCard({
-  course,
-  index,
-}: {
-  course: (typeof COURSES)[0];
-  index: number;
-}) {
-  const isYellow = index === 0;
-  const bg = isYellow ? C.accent : C.surface;
-  const textPrimary = isYellow ? "#000" : C.text;
-  const textSec = isYellow ? "#333" : C.textSec;
-  const borderColor = isYellow ? "transparent" : C.border;
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
-      onPress={() => router.push(`/course/${course.id}`)}
-      style={{
-        backgroundColor: bg,
-        borderRadius: 24,
-        padding: 20,
-        gap: 14,
-        borderWidth: 1,
-        borderColor,
-      }}
+      onPress={() => router.push(`/happening/${item.id}`)}
+      style={{ backgroundColor: C.surface, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: C.border }}
     >
-      {/* Top row */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              borderWidth: 1.5,
-              borderColor: isYellow ? "#000" : C.border,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>{course.emoji}</Text>
+      <View style={{ flexDirection: "row", gap: 14 }}>
+        <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+        </View>
+        <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <View style={{ backgroundColor: item.color + "22", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: item.color }}>{item.category.toUpperCase()}</Text>
+            </View>
+            <Text style={{ fontSize: 11, color: C.textDim }}>·  {item.vibe}</Text>
           </View>
-          <Text style={{ fontSize: 12, fontWeight: "700", color: textSec, letterSpacing: 1 }}>
-            COURSE {index + 1}
+          <Text style={{ fontSize: 16, fontWeight: "800", color: C.text }} numberOfLines={1}>{item.title}</Text>
+          <Text style={{ fontSize: 12, color: C.textSec }} numberOfLines={1}>
+            {item.venue} · {item.neighborhood}
           </Text>
         </View>
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: isYellow ? "#000" : C.surface2,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ color: isYellow ? "#FFF" : C.textSec, fontSize: 18, lineHeight: 20 }}>
-            ···
-          </Text>
-        </View>
-      </View>
-
-      {/* Subtitle */}
-      <Text style={{ fontSize: 13, color: textSec }}>
-        {course.subtitle}
-      </Text>
-
-      {/* Main title + level + teacher */}
-      <View style={{ gap: 4 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <Text style={{ fontSize: 30, fontWeight: "900", color: textPrimary, lineHeight: 34 }}>
-            {course.title.split(" ")[0]}
-          </Text>
-          <View
-            style={{
-              backgroundColor: isYellow ? "#000" : C.surface2,
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-              borderRadius: 20,
-              marginTop: 4,
-            }}
-          >
-            <Text style={{ fontSize: 11, fontWeight: "700", color: isYellow ? C.accent : C.textSec }}>
-              {course.level}
-            </Text>
-          </View>
-        </View>
-        <Text style={{ fontSize: 30, fontWeight: "900", color: textPrimary, lineHeight: 34 }}>
-          {course.title.split(" ").slice(1).join(" ")}
-        </Text>
-      </View>
-
-      {/* Stats */}
-      <Text style={{ fontSize: 13, color: textSec }}>
-        {course.duration}{"   "}⭐ {course.rating} Rating
-      </Text>
-
-      {/* Bottom: avatars + CTA */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <OverlappingAvatars count={course.students > 1000 ? course.students % 10 + 3 : 3} />
-        <Pressable
-          onPress={() => router.push(`/course/${course.id}`)}
-          style={{
-            backgroundColor: isYellow ? "#000" : C.accent,
-            borderRadius: 24,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Text style={{ fontSize: 14, fontWeight: "800", color: isYellow ? C.accent : "#000" }}>
-            {index === 0 ? "Join Now" : "Start Now"}
-          </Text>
-          <Ionicons name="arrow-forward" size={14} color={isYellow ? C.accent : "#000"} />
+        <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
+          <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={20} color={isSaved ? C.accent : C.textSec} />
         </Pressable>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10 }}>
+        <Text style={{ fontSize: 12, fontWeight: "700", color: C.text }}>{item.when}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons name="people-outline" size={13} color={C.textSec} />
+            <Text style={{ fontSize: 12, color: C.textSec }}>{item.hype + (isGoing ? 1 : 0)}</Text>
+          </View>
+          <Text style={{ fontSize: 12, fontWeight: "800", color: item.price === "Free" ? C.teal : C.text }}>{item.price}</Text>
+        </View>
       </View>
     </Pressable>
   );
 }
 
-export default function HomeScreen() {
+export default function NowScreen() {
   const insets = useSafeAreaInsets();
   const store = useStore();
-  const [selectedCat, setSelectedCat] = useState("All");
+  const [time, setTime] = useState<TimeBucket>("tonight");
+  const [cat, setCat] = useState("All");
 
-  const filtered =
-    selectedCat === "All"
-      ? COURSES
-      : COURSES.filter((c) => c.category.toLowerCase().includes(selectedCat.toLowerCase()) || c.tags.some((t) => t.toLowerCase().includes(selectedCat.toLowerCase())));
+  useEffect(() => {
+    detectLocation();
+  }, []);
+
+  const all = useMemo(() => [...store.shared, ...HAPPENINGS], [store.shared]);
+
+  const filtered = all.filter((h) => {
+    const matchTime = h.timeBucket === time;
+    const matchCat = cat === "All" || h.category === cat;
+    return matchTime && matchCat;
+  });
+
+  const featured = filtered[0];
+  const rest = filtered.slice(1);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 130 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View
-          style={{
-            paddingTop: insets.top + 16,
-            paddingHorizontal: 24,
-            paddingBottom: 20,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: C.accent,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 2,
-                borderColor: C.accent + "66",
-              }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: "900", color: "#000" }}>
-                {store.userName[0]}
-              </Text>
-            </View>
-            <Text style={{ fontSize: 30, fontWeight: "900", color: C.text }}>
-              Hi, {store.userName}
-            </Text>
+        <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 24, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View>
+            <Text style={{ fontSize: 13, color: C.textSec, fontWeight: "600" }}>Hey {store.userName} 👋</Text>
+            <Text style={{ fontSize: 28, fontWeight: "900", color: C.text }}>What's popping</Text>
           </View>
           <Pressable
             onPress={() => router.push("/(tabs)/explore")}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: C.surface,
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1,
-              borderColor: C.border,
-            }}
+            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.border }}
           >
             <Ionicons name="search" size={20} color={C.text} />
           </Pressable>
         </View>
 
-        {/* Divider */}
-        <View style={{ height: 1, backgroundColor: C.border, marginHorizontal: 24, marginBottom: 20 }} />
+        {/* Location pill */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: C.accent + "18", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: C.accent + "33" }}>
+            <Ionicons name="location" size={13} color={C.accent} />
+            <Text style={{ fontSize: 12, fontWeight: "700", color: C.accent }}>Mumbai · {store.neighborhood}</Text>
+          </View>
+        </View>
 
-        {/* My Course + search */}
-        <View
-          style={{
-            paddingHorizontal: 24,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ fontSize: 22, fontWeight: "900", color: C.text }}>
-            My Course
-          </Text>
+        {/* Time filter */}
+        <View style={{ flexDirection: "row", paddingHorizontal: 24, gap: 8, marginBottom: 16 }}>
+          {TIME_FILTERS.map((t) => {
+            const active = t.key === time;
+            return (
+              <Pressable
+                key={t.key}
+                onPress={() => setTime(t.key)}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: "center", backgroundColor: active ? C.text : C.surface, borderWidth: 1, borderColor: active ? C.text : C.border }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "800", color: active ? C.bg : C.textSec }}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Category pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginBottom: 20 }}
-          contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}
-        >
-          {CATEGORIES.map((cat) => {
-            const isActive = cat === selectedCat;
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }} contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}>
+          {CATEGORIES.map((c) => {
+            const active = c === cat;
             return (
               <Pressable
-                key={cat}
-                onPress={() => setSelectedCat(cat)}
-                style={{
-                  paddingHorizontal: 18,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  backgroundColor: isActive ? C.text : C.surface,
-                  borderWidth: 1,
-                  borderColor: isActive ? C.text : C.border,
-                }}
+                key={c}
+                onPress={() => setCat(c)}
+                style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: active ? C.accent : C.surface, borderWidth: 1, borderColor: active ? C.accent : C.border }}
               >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: isActive ? C.bg : C.textSec,
-                  }}
-                >
-                  {cat}
-                </Text>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: active ? "#000" : C.textSec }}>{c}</Text>
               </Pressable>
             );
           })}
         </ScrollView>
 
-        {/* Course cards */}
-        <View style={{ paddingHorizontal: 20, gap: 16 }}>
-          {(filtered.length > 0 ? filtered : COURSES).map((course, i) => (
-            <CourseCard key={course.id} course={course} index={i} />
-          ))}
+        {/* Feed */}
+        <View style={{ paddingHorizontal: 20, gap: 14 }}>
+          {filtered.length === 0 ? (
+            <View style={{ alignItems: "center", paddingVertical: 60, gap: 8 }}>
+              <Text style={{ fontSize: 40 }}>🤷</Text>
+              <Text style={{ fontSize: 16, fontWeight: "700", color: C.text }}>Nothing here yet</Text>
+              <Text style={{ fontSize: 13, color: C.textSec }}>Try another time or category — or share something!</Text>
+            </View>
+          ) : (
+            <>
+              {featured && <HappeningCard item={featured} featured />}
+              {rest.map((item) => (
+                <HappeningCard key={item.id} item={item} />
+              ))}
+            </>
+          )}
         </View>
       </ScrollView>
     </View>

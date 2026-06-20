@@ -2,6 +2,7 @@ import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/constants/colors";
+import { setOnboarded } from "@/utils/store";
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
@@ -19,7 +20,7 @@ export default function WelcomeScreen() {
           <View style={{ width: 90, height: 90, borderRadius: 45, backgroundColor: C.accent + "25", position: "absolute", bottom: 40, right: 20 }} />
           <View style={{ width: 60, height: 60, borderRadius: 12, backgroundColor: C.orange + "40", position: "absolute", top: 20, right: 30, transform: [{ rotate: "15deg" }] }} />
           {/* Center text */}
-          <Text style={{ fontSize: 64, position: "absolute" }}>🎨</Text>
+          <Text style={{ fontSize: 64, position: "absolute" }}>🌆</Text>
           {/* Sparkles */}
           <Text style={{ position: "absolute", top: 10, right: 50, fontSize: 20 }}>✦</Text>
           <Text style={{ position: "absolute", bottom: 20, left: 40, fontSize: 14 }}>✦</Text>
@@ -30,10 +31,10 @@ export default function WelcomeScreen() {
       {/* Text content */}
       <View style={{ gap: 16, marginBottom: 40 }}>
         <Text style={{ fontSize: 44, fontWeight: "900", color: C.text, lineHeight: 50, letterSpacing: -1 }}>
-          Design.{"\n"}Learn.{"\n"}Create.
+          Mumbai.{"\n"}Right{"\n"}now.
         </Text>
         <Text style={{ fontSize: 16, color: C.textSec, lineHeight: 24 }}>
-          Master UI/UX, typography, color theory and more — one lesson at a time.
+          What's popping tonight — gigs, food, parties, art. Discover it and share it with the city.
         </Text>
       </View>
 
@@ -47,11 +48,22 @@ export default function WelcomeScreen() {
         </Pressable>
         <Pressable
           onPress={() => router.push("/(onboarding)/login")}
-          style={{ borderRadius: 16, paddingVertical: 18, alignItems: "center" }}
+          style={{ borderRadius: 16, paddingVertical: 16, alignItems: "center" }}
         >
           <Text style={{ fontSize: 15, color: C.textSec }}>
             Already have an account?{" "}
             <Text style={{ color: C.accent, fontWeight: "700" }}>Log in</Text>
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            setOnboarded("there");
+            router.replace("/(tabs)");
+          }}
+          style={{ alignItems: "center", paddingVertical: 4 }}
+        >
+          <Text style={{ fontSize: 14, color: C.textDim, fontWeight: "600" }}>
+            Just browsing? Skip for now →
           </Text>
         </Pressable>
       </View>

@@ -9,10 +9,10 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="course/[id]" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="lesson/[lessonId]" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="happening/[id]" options={{ animation: "slide_from_right" }} />
       </Stack>
     </GestureHandlerRootView>
   );

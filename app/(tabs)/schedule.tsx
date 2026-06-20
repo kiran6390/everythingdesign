@@ -1,80 +1,85 @@
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { router } from "expo-router";
+import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "@/constants/colors";
-import { SCHEDULE } from "@/data/courses";
+import { HAPPENINGS, type Happening } from "@/data/happenings";
+import { useStore } from "@/hooks/use-store";
+import { toggleSave } from "@/utils/store";
 
-export default function ScheduleScreen() {
+const TABS = ["Saved", "Going"] as const;
+
+export default function SavedScreen() {
   const insets = useSafeAreaInsets();
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const today = new Date();
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - 3 + i);
-    return d;
-  });
+  const store = useStore();
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Saved");
+
+  const all = [...store.shared, ...HAPPENINGS];
+  const ids = tab === "Saved" ? store.saved : store.going;
+  const items = ids
+    .map((id) => all.find((h) => h.id === id))
+    .filter(Boolean) as Happening[];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-      <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 24, gap: 24 }}>
-        {/* Header */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontSize: 26, fontWeight: "900", color: C.text }}>Schedule</Text>
-          <Ionicons name="calendar-outline" size={22} color={C.textSec} />
-        </View>
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 24, gap: 20 }}>
+        <Text style={{ fontSize: 26, fontWeight: "900", color: C.text }}>Your plans</Text>
 
-        {/* Today's focus */}
-        <View style={{ backgroundColor: C.accent + "15", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: C.accent + "33" }}>
-          <Text style={{ fontSize: 13, color: C.accent, fontWeight: "600", marginBottom: 4 }}>Learning Today</Text>
-          <Text style={{ fontSize: 28, fontWeight: "900", color: C.text }}>70s / 30Min</Text>
-          <Text style={{ fontSize: 13, color: C.textSec, marginTop: 4 }}>Keep it up! You're on a {7}-day streak 🔥</Text>
-        </View>
-
-        {/* Week strip */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          {dates.map((d, i) => {
-            const isToday = i === 3;
-            return (
-              <View key={i} style={{ alignItems: "center", gap: 8 }}>
-                <Text style={{ fontSize: 12, color: isToday ? C.accent : C.textSec, fontWeight: "600" }}>{d.getDate()}</Text>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isToday ? C.accent : C.surface, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: isToday ? "#000" : C.textSec }}>{days[d.getDay() === 0 ? 6 : d.getDay() - 1]}</Text>
-                </View>
-                {isToday && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.accent }} />}
-              </View>
-            );
-          })}
-        </View>
-
-        {/* My Schedule */}
-        <View style={{ gap: 14 }}>
-          <Text style={{ fontSize: 18, fontWeight: "800", color: C.text }}>My Schedule</Text>
-          {SCHEDULE.map((item, index) => (
-            <View
-              key={item.id}
-              style={{
-                backgroundColor: C.surface,
-                borderRadius: 18,
-                padding: 18,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 16,
-                borderWidth: 1,
-                borderColor: C.border,
-                borderLeftWidth: 4,
-                borderLeftColor: item.color,
-              }}
+        {/* Toggle */}
+        <View style={{ flexDirection: "row", backgroundColor: C.surface, borderRadius: 14, padding: 4, gap: 4 }}>
+          {TABS.map((t) => (
+            <Pressable
+              key={t}
+              onPress={() => setTab(t)}
+              style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: tab === t ? C.accent : "transparent", alignItems: "center" }}
             >
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }}>{item.title}</Text>
-                <Text style={{ fontSize: 12, color: C.textSec, marginTop: 4 }}>{item.time}</Text>
-              </View>
-              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="play" size={14} color={item.color} />
-              </View>
-            </View>
+              <Text style={{ fontSize: 13, fontWeight: "800", color: tab === t ? "#000" : C.textSec }}>
+                {t} {t === "Saved" ? `(${store.saved.length})` : `(${store.going.length})`}
+              </Text>
+            </Pressable>
           ))}
         </View>
+
+        {items.length === 0 ? (
+          <View style={{ alignItems: "center", paddingVertical: 80, gap: 10 }}>
+            <Text style={{ fontSize: 44 }}>{tab === "Saved" ? "🔖" : "🎟️"}</Text>
+            <Text style={{ fontSize: 16, fontWeight: "800", color: C.text }}>
+              {tab === "Saved" ? "Nothing saved yet" : "Not going anywhere yet"}
+            </Text>
+            <Text style={{ fontSize: 13, color: C.textSec, textAlign: "center" }}>
+              {tab === "Saved"
+                ? "Tap the bookmark on anything that looks fun."
+                : "Open a happening and tap \"I'm going\"."}
+            </Text>
+            <Pressable onPress={() => router.push("/(tabs)")} style={{ marginTop: 8, backgroundColor: C.accent, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12 }}>
+              <Text style={{ fontSize: 14, fontWeight: "800", color: "#000" }}>See what's popping →</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{ gap: 14 }}>
+            {items.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => router.push(`/happening/${item.id}`)}
+                style={{ backgroundColor: C.surface, borderRadius: 18, padding: 16, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.border, borderLeftWidth: 4, borderLeftColor: item.color }}
+              >
+                <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 24 }}>{item.emoji}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }} numberOfLines={1}>{item.title}</Text>
+                  <Text style={{ fontSize: 12, color: C.textSec, marginTop: 4 }}>{item.when} · {item.neighborhood}</Text>
+                </View>
+                {tab === "Saved" && (
+                  <Pressable onPress={() => toggleSave(item.id)} hitSlop={10}>
+                    <Ionicons name="bookmark" size={18} color={C.accent} />
+                  </Pressable>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        )}
       </View>
     </ScrollView>
   );

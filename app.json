@@ -1,17 +1,43 @@
 {
   "expo": {
-    "name": "Forma",
-    "slug": "forma",
+    "name": "GetIn",
+    "slug": "everything-design",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "scheme": "forma",
-    "ios": { "supportsTablet": false },
+    "scheme": "everything-design",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.everythingdesign.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "plugins": [
       "expo-router",
-      ["expo-splash-screen", { "backgroundColor": "#0D0D0D", "resizeMode": "contain" }]
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0D0D0D",
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "GetIn uses your location to show places near you so you can check in."
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7946cb90-e17e-404d-81a1-28983ff5a607"
+      }
+    }
   }
 }

@@ -1,6 +1,8 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur";
+import { StyleSheet, View } from "react-native";
 import { C } from "@/constants/colors";
 
 export default function TabsLayout() {
@@ -12,23 +14,20 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
-          bottom: 12 + insets.bottom,
-          left: 60,
-          right: 60,
-          height: 64,
-          borderRadius: 40,
-          backgroundColor: C.surface,
-          borderTopWidth: 0,
-          borderWidth: 1,
-          borderColor: C.border,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 60 + insets.bottom,
+          borderTopWidth: 0.5,
+          borderTopColor: "rgba(255,255,255,0.1)",
+          backgroundColor: "transparent",
           elevation: 0,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.4,
-          shadowRadius: 16,
         },
+        tabBarBackground: () => (
+          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+        ),
         tabBarActiveTintColor: C.accent,
-        tabBarInactiveTintColor: C.textSec,
+        tabBarInactiveTintColor: "rgba(255,255,255,0.4)",
         tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: 2 },
         tabBarItemStyle: { paddingVertical: 10 },
       }}
@@ -36,32 +35,52 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <Ionicons name="home" size={22} color={color} />,
+          title: "Now",
+          tabBarIcon: ({ color }) => <Ionicons name="flame" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Course",
-          tabBarIcon: ({ color }) => <Ionicons name="book-outline" size={22} color={color} />,
+          title: "Explore",
+          tabBarIcon: ({ color }) => <Ionicons name="compass" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="progress"
+        name="checkin"
         options={{
-          title: "Progress",
-          tabBarIcon: ({ color }) => <Ionicons name="stats-chart" size={22} color={color} />,
+          title: "Check in",
+          tabBarIcon: () => (
+            <View
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 23,
+                backgroundColor: C.accent,
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: -6,
+              }}
+            >
+              <Ionicons name="location" size={24} color="#000" />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
+        options={{
+          title: "Saved",
+          tabBarIcon: ({ color }) => <Ionicons name="bookmark" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <Ionicons name="person-outline" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={22} color={color} />,
         }}
       />
-      <Tabs.Screen name="schedule" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,15 +1,17 @@
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "@/constants/colors";
-import { setOnboarded } from "@/utils/store";
+import { hydrate } from "@/utils/store";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -18,10 +20,10 @@ export default function LoginScreen() {
           <Ionicons name="arrow-back" size={20} color={C.text} />
         </Pressable>
 
-        <Text style={{ fontSize: 32, fontWeight: "900", color: C.text, marginBottom: 8 }}>Welcome back{"\n"}to Forma</Text>
-        <Text style={{ fontSize: 15, color: C.textSec, marginBottom: 40 }}>Log in to continue your design journey</Text>
+        <Text style={{ fontSize: 32, fontWeight: "900", color: C.text, marginBottom: 8 }}>Welcome back to{"\n"}GetIn</Text>
+        <Text style={{ fontSize: 15, color: C.textSec, marginBottom: 40 }}>Log in to see what's popping tonight</Text>
 
-        <View style={{ gap: 16, flex: 1 }}>
+        <View style={{ gap: 16 }}>
           {[
             { label: "Email", value: email, set: setEmail, placeholder: "you@email.com", secure: false },
             { label: "Password", value: password, set: setPassword, placeholder: "Your password", secure: true },
@@ -59,13 +61,32 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <Pressable onPress={() => { setOnboarded("Emma"); router.replace("/(tabs)"); }} style={{ backgroundColor: C.accent, borderRadius: 16, paddingVertical: 18, alignItems: "center", marginTop: 24 }}>
-          <Text style={{ fontSize: 17, fontWeight: "800", color: "#000" }}>Log In</Text>
+        <Pressable
+          onPress={async () => {
+            if (!email || !password) {
+              Alert.alert("Error", "Please fill in all fields");
+              return;
+            }
+            setLoading(true);
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            setLoading(false);
+            if (error) {
+              Alert.alert("Login failed", error.message);
+              return;
+            }
+            const name = data.user?.user_metadata?.full_name?.split(" ")[0] || "there";
+            if (data.user) hydrate(data.user.id, name);
+            router.replace("/(tabs)");
+          }}
+          disabled={loading}
+          style={{ backgroundColor: C.accent, borderRadius: 16, paddingVertical: 18, alignItems: "center", marginTop: 24, opacity: loading ? 0.6 : 1 }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: "800", color: "#000" }}>{loading ? "Logging in..." : "Log In"}</Text>
         </Pressable>
 
         <Pressable onPress={() => router.push("/(onboarding)/signup")} style={{ paddingVertical: 16, alignItems: "center" }}>
           <Text style={{ fontSize: 14, color: C.textSec }}>
-            New to Forma?{" "}
+            New to GetIn?{" "}
             <Text style={{ color: C.accent, fontWeight: "700" }}>Sign up</Text>
           </Text>
         </Pressable>

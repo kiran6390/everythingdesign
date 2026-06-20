@@ -1,46 +1,157 @@
+import type { Happening } from "@/data/happenings";
+import * as db from "@/lib/db";
+import * as Location from "expo-location";
+import { nearestNeighborhood } from "@/lib/places";
+
 type State = {
   onboarded: boolean;
+  userId: string | null; // null in guest mode
   userName: string;
-  enrolledCourses: string[];
-  completedLessons: string[];
-  currentCourseId: string;
-  streak: number;
-  xp: number;
+  neighborhood: string;
+  saved: string[]; // saved happening ids
+  going: string[]; // going happening ids
+  shared: Happening[]; // happenings shared by the community (from server)
 };
 
 const state: State = {
   onboarded: false,
-  userName: "Emma",
-  enrolledCourses: ["1", "2"],
-  completedLessons: ["1-1", "1-2"],
-  currentCourseId: "1",
-  streak: 7,
-  xp: 250,
+  userId: null,
+  userName: "there",
+  neighborhood: "Bandra",
+  saved: [],
+  going: [],
+  shared: [],
 };
 
 const listeners = new Set<() => void>();
-function notify() { listeners.forEach((l) => l()); }
+function notify() {
+  listeners.forEach((l) => l());
+}
 
-export const subscribe = (l: () => void) => { listeners.add(l); return () => listeners.delete(l); };
+export const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => listeners.delete(l);
+};
 export const getSnapshot = () => state;
 
 export function setOnboarded(name: string) {
   state.onboarded = true;
-  state.userName = name || "Emma";
+  state.userName = name || "there";
   notify();
 }
 
-export function enrollCourse(id: string) {
-  if (!state.enrolledCourses.includes(id)) {
-    state.enrolledCourses = [...state.enrolledCourses, id];
+// Called after a Supabase session is available — pulls the user's data.
+export async function hydrate(userId: string, fallbackName: string) {
+  state.userId = userId;
+  state.onboarded = true;
+  state.userName = fallbackName || state.userName;
+  notify();
+  try {
+    const [profile, marks, shared] = await Promise.all([
+      db.fetchProfile(userId),
+      db.fetchUserHappenings(userId),
+      db.fetchSharedHappenings(userId),
+    ]);
+    if (profile?.name) state.userName = profile.name.split(" ")[0];
+    if (profile?.neighborhood) state.neighborhood = profile.neighborhood;
+    state.saved = marks.saved;
+    state.going = marks.going;
+    state.shared = shared;
     notify();
+  } catch {
+    // Offline or schema not set up yet — keep optimistic local state.
   }
 }
 
-export function completeLesson(id: string) {
-  if (!state.completedLessons.includes(id)) {
-    state.completedLessons = [...state.completedLessons, id];
-    state.xp += 20;
+// Best-effort live location → updates the home pill to the user's real area.
+// Runs once; silently keeps the default if permission is denied or it fails.
+let locationInFlight = false;
+let locationResolved = false;
+export async function detectLocation() {
+  if (locationInFlight || locationResolved) return;
+  locationInFlight = true;
+  try {
+    let { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== "granted") {
+      status = (await Location.requestForegroundPermissionsAsync()).status;
+    }
+    if (status !== "granted") return;
+
+    // fast path: last known position; fall back to a fresh fix
+    let loc = await Location.getLastKnownPositionAsync();
+    if (!loc) {
+      loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+    }
+    if (!loc) return;
+
+    // deterministic: snap to nearest known Mumbai area
+    let area = nearestNeighborhood(loc.coords.latitude, loc.coords.longitude);
+
+    // fallback to reverse geocoding if outside our known set
+    if (!area) {
+      try {
+        const geo = await Location.reverseGeocodeAsync(loc.coords);
+        const g = geo[0];
+        area = g?.district || g?.subregion || g?.city || null;
+      } catch {}
+    }
+
+    if (area) {
+      state.neighborhood = area;
+      locationResolved = true;
+      notify();
+      if (state.userId) db.updateNeighborhood(state.userId, area).catch(() => {});
+    }
+  } catch {
+    // ignore — keep the existing neighborhood
+  } finally {
+    locationInFlight = false;
+  }
+}
+
+export function setNeighborhood(n: string) {
+  state.neighborhood = n;
+  notify();
+  if (state.userId) db.updateNeighborhood(state.userId, n).catch(() => {});
+}
+
+export function toggleSave(id: string) {
+  const on = !state.saved.includes(id);
+  state.saved = on ? [...state.saved, id] : state.saved.filter((x) => x !== id);
+  notify();
+  if (state.userId) db.setSaveState(state.userId, id, "saved", on).catch(() => {});
+}
+
+export function toggleGoing(id: string) {
+  const on = !state.going.includes(id);
+  state.going = on ? [...state.going, id] : state.going.filter((x) => x !== id);
+  notify();
+  if (state.userId) db.setSaveState(state.userId, id, "going", on).catch(() => {});
+}
+
+// A check-in is just a "happening right now" at a venue.
+export function checkInAt(h: Happening) {
+  addPosted(h);
+  if (!state.going.includes(h.id)) {
+    state.going = [...state.going, h.id];
     notify();
+    if (state.userId) db.setSaveState(state.userId, h.id, "going", true).catch(() => {});
+  }
+}
+
+export function addPosted(h: Happening) {
+  // optimistic insert
+  state.shared = [{ ...h, mine: true }, ...state.shared];
+  notify();
+  if (state.userId) {
+    db.insertHappening(state.userId, h)
+      .then((saved) => {
+        if (saved) {
+          // replace the optimistic temp entry with the server row (real id)
+          state.shared = [saved, ...state.shared.filter((x) => x.id !== h.id)];
+          notify();
+        }
+      })
+      .catch(() => {});
   }
 }

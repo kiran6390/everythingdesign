@@ -8,28 +8,28 @@ const { width: W } = Dimensions.get("window");
 
 const SLIDES = [
   {
-    emoji: "✏️",
-    quote: "Design is not just what it looks like. Design is how it works.",
-    author: "Steve Jobs",
-    bg: C.purple + "20",
-    accent: C.purple,
-    tagline: "Start mastering design today and level up your creative skills.",
-  },
-  {
-    emoji: "🎯",
-    quote: "Good design is obvious. Great design is transparent.",
-    author: "Joe Sparano",
+    emoji: "🔥",
+    quote: "Find out what's popping in Mumbai, right now.",
+    author: "Tonight",
     bg: C.accent + "15",
     accent: C.accent,
-    tagline: "Unlock your potential with Forma. Learn from the best.",
+    tagline: "Gigs, rooftops, food crawls and art — live and updated by the hour.",
   },
   {
-    emoji: "🚀",
-    quote: "Every great design begins with an even better story.",
-    author: "Lorinda Mamo",
+    emoji: "📍",
+    quote: "Everything happening near you, by neighborhood.",
+    author: "Bandra to Colaba",
+    bg: C.purple + "20",
+    accent: C.purple,
+    tagline: "Filter by area, vibe and time. Save your plans and get directions in a tap.",
+  },
+  {
+    emoji: "📣",
+    quote: "Spotted something fun? Share it with the city.",
+    author: "Be the source",
     bg: C.orange + "20",
     accent: C.orange,
-    tagline: "Join 10,000+ designers already learning with Forma.",
+    tagline: "Post a happening in seconds and put your scene on the map.",
   },
 ];
 
