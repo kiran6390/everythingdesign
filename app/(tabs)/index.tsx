@@ -1,4 +1,4 @@
-import { ActivityIndicator, Image, ImageBackground, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Image, ImageBackground, Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,7 +10,7 @@ import { useStore } from "@/hooks/use-store";
 import { toggleSave, detectLocation, setManualArea } from "@/utils/store";
 import CardStack from "@/components/CardStack";
 import { googleNearby } from "@/lib/placesGoogle";
-import { fetchNearbyVenues, prettyType, formatDistance, type Venue } from "@/lib/places";
+import { fetchNearbyVenues, type Venue } from "@/lib/places";
 
 type VenueBucket = "nightlife" | "dining" | "cafe" | "other";
 function venueBucket(type: string): VenueBucket {
@@ -20,12 +20,6 @@ function venueBucket(type: string): VenueBucket {
   if (t.includes("restaurant") || t.includes("dining") || t.includes("food") || t.includes("deli") || t.includes("dosa") || t.includes("meal") || t.includes("steak") || t.includes("pizza")) return "dining";
   return "other";
 }
-const VENUE_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "nightlife", label: "🍸 Clubs & Bars" },
-  { key: "dining", label: "🍽️ Dining" },
-  { key: "cafe", label: "☕ Cafés" },
-];
 
 function BigCard({ item }: { item: Happening }) {
   const store = useStore();
@@ -117,56 +111,22 @@ function venueImage(type: string, id = "") {
   return VU(pool[hashStr(id) % pool.length]);
 }
 
-function VenueBigCard({ v }: { v: Venue }) {
-  const store = useStore();
-  const isSaved = store.saved.includes(v.id);
-  return (
-    <Pressable
-      onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}&query_place_id=${v.id}`)}
-      style={{ borderRadius: 28, overflow: "hidden", height: 300, backgroundColor: C.surface }}
-    >
-      <ImageBackground source={{ uri: v.image ?? venueImage(v.type, v.id) }} style={{ flex: 1 }}>
-        <Pressable onPress={() => toggleSave(v.id)} hitSlop={10} style={{ position: "absolute", top: 14, right: 14, zIndex: 2, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" }}>
-          <Ionicons name={isSaved ? "heart" : "heart-outline"} size={20} color={isSaved ? "#FF4D6D" : "#fff"} />
-        </Pressable>
-        <LinearGradient colors={["rgba(0,0,0,0.2)", "transparent", "rgba(0,0,0,0.88)"]} locations={[0, 0.45, 1]} style={{ flex: 1, justifyContent: "flex-end", padding: 18 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.accent }} />
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "600" }}>{prettyType(v.type)} · {formatDistance(v.distance)} away</Text>
-          </View>
-          <Text style={{ color: "#fff", fontSize: 24, fontWeight: "900" }} numberOfLines={1}>{v.name}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", marginTop: 12 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.accent, paddingLeft: 16, paddingRight: 5, paddingVertical: 5, borderRadius: 24 }}>
-              <Text style={{ color: "#000", fontWeight: "800", fontSize: 14 }}>Directions</Text>
-              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "#000", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="navigate" size={15} color={C.accent} />
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
-      </ImageBackground>
-    </Pressable>
-  );
-}
-
 export default function NowScreen() {
   const insets = useSafeAreaInsets();
   const store = useStore();
   const [time, setTime] = useState<TimeBucket>("tonight");
   const [tFilter, setTFilter] = useState<string>("all");
   const [nearby, setNearby] = useState<Venue[]>([]);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
   const [showLoc, setShowLoc] = useState(false);
-  const [venFilter, setVenFilter] = useState<string>("all");
-
-  // categorised + quality-sorted nearby venues (drops uncategorised "local" noise)
-  const shownNearby = nearby
-    .filter((v) => {
-      const b = venueBucket(v.type);
-      if (b === "other") return false;
-      return venFilter === "all" || b === venFilter;
-    })
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  // real nightlife venues near the chosen area → the "Clubs tonight" deck
+  const deckClubs = (() => {
+    const clubs = nearby
+      .filter((v) => venueBucket(v.type) === "nightlife")
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      .slice(0, 8)
+      .map((v) => ({ id: v.id, name: v.name, area: store.neighborhood, rating: v.rating ?? 4.2, image: v.image ?? venueImage(v.type, v.id) }));
+    return clubs.length ? clubs : CLUBS;
+  })();
 
   // prompt for location on entry
   useEffect(() => { detectLocation(); }, []);
@@ -176,7 +136,6 @@ export default function NowScreen() {
     if (!store.coords) return;
     const { lat, lng } = store.coords;
     setNearby([]);
-    setNearbyLoading(true);
     (async () => {
       try {
         let v = await googleNearby(lat, lng);
@@ -184,25 +143,24 @@ export default function NowScreen() {
         setNearby(v.slice(0, 20));
       } catch {
         try { setNearby((await fetchNearbyVenues(lat, lng)).slice(0, 20)); } catch {}
-      } finally {
-        setNearbyLoading(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.coords?.lat, store.coords?.lng]);
 
-  const tonight = store.programmes
-    .map((p) => {
-      const club = CLUBS.find((c) => c.id === p.venueId);
-      return {
-        p,
-        venue: {
-          name: club?.name ?? p.venueName ?? "Venue",
-          area: club?.area ?? p.venueArea ?? "Mumbai",
-          image: club?.image ?? p.venueImage,
-        },
-      };
-    })
+  const tonightMapped = store.programmes.map((p) => {
+    const club = CLUBS.find((c) => c.id === p.venueId);
+    return {
+      p,
+      venue: {
+        name: club?.name ?? p.venueName ?? "Venue",
+        area: club?.area ?? p.venueArea ?? "Mumbai",
+        image: club?.image ?? p.venueImage,
+      },
+    };
+  });
+  const tonightInArea = store.neighborhood === "Mumbai" ? tonightMapped : tonightMapped.filter((x) => x.venue.area === store.neighborhood);
+  const tonight = (tonightInArea.length ? tonightInArea : tonightMapped)
     .filter(({ p }) => tFilter === "all" || (tFilter === "packed" ? p.vibe === "packed" : p.type === tFilter));
 
   const TONIGHT_FILTERS = [
@@ -215,15 +173,15 @@ export default function NowScreen() {
 
   const all = useMemo(() => [...store.shared, ...HAPPENINGS], [store.shared]);
   const byTime = all.filter((h) => h.timeBucket === time);
-  // events in the chosen area; fall back to all-Mumbai if that area has none
-  const inArea = store.neighborhood === "Mumbai" ? byTime : byTime.filter((h) => h.neighborhood === store.neighborhood);
-  const filtered = (inArea.length ? inArea : byTime).sort((a, b) => {
-    // surface the user's interests first
+  // show the full list, but float the chosen area's events (then interests) to the top
+  const filtered = byTime.slice().sort((a, b) => {
+    const aArea = store.neighborhood !== "Mumbai" && a.neighborhood === store.neighborhood ? 0 : 1;
+    const bArea = store.neighborhood !== "Mumbai" && b.neighborhood === store.neighborhood ? 0 : 1;
+    if (aArea !== bArea) return aArea - bArea;
     const av = store.vibes.length && store.vibes.includes(a.category) ? 0 : 1;
     const bv = store.vibes.length && store.vibes.includes(b.category) ? 0 : 1;
     return av - bv;
   });
-  const areaHasEvents = inArea.length > 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -275,45 +233,11 @@ export default function NowScreen() {
           </View>
         )}
 
-        {/* Around you — the location-driven main feed */}
-        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 22, marginBottom: 12 }}>Around you</Text>
-        {store.coords && nearby.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }} style={{ marginBottom: 12 }}>
-            {VENUE_FILTERS.map((f) => {
-              const active = f.key === venFilter;
-              return (
-                <Pressable key={f.key} onPress={() => setVenFilter(f.key)} style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 22, backgroundColor: active ? C.accent : C.surface }}>
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: active ? "#000" : C.textSec }}>{f.label}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        )}
-        <View style={{ paddingHorizontal: 24, gap: 18, marginBottom: 4 }}>
-          {!store.coords ? (
-            <View style={{ backgroundColor: C.surface, borderRadius: 20, padding: 24, alignItems: "center", gap: 12 }}>
-              <Ionicons name="location" size={36} color={C.accent} />
-              <Text style={{ fontSize: 16, fontWeight: "800", color: C.text, textAlign: "center" }}>See what's around you</Text>
-              <Text style={{ fontSize: 13, color: C.textSec, textAlign: "center" }}>Turn on location to load real venues near you.</Text>
-              <Pressable onPress={() => detectLocation(true)} style={{ backgroundColor: C.accent, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12, marginTop: 4 }}>
-                <Text style={{ fontSize: 14, fontWeight: "800", color: "#000" }}>Enable location</Text>
-              </Pressable>
-            </View>
-          ) : nearbyLoading && nearby.length === 0 ? (
-            <View style={{ alignItems: "center", paddingVertical: 40, gap: 10 }}>
-              <ActivityIndicator color={C.accent} />
-              <Text style={{ fontSize: 13, color: C.textSec }}>Finding places near you…</Text>
-            </View>
-          ) : shownNearby.length === 0 ? (
-            <Text style={{ fontSize: 13, color: C.textSec, paddingVertical: 16 }}>No {venFilter === "all" ? "places" : venFilter} found nearby.</Text>
-          ) : (
-            shownNearby.map((v) => <VenueBigCard key={v.id} v={v} />)
-          )}
-        </View>
-
-        {/* Clubs deck */}
-        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 24 }}>Clubs tonight</Text>
-        <CardStack items={CLUBS} />
+        {/* Clubs deck — real nightlife near the chosen area */}
+        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 14 }}>
+          Clubs tonight{store.neighborhood !== "Mumbai" ? ` · ${store.neighborhood}` : ""}
+        </Text>
+        <CardStack items={deckClubs} />
 
         {/* Tonight — operator overlay (the moat) */}
         <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 18, marginBottom: 12 }}>Tonight</Text>
@@ -366,13 +290,7 @@ export default function NowScreen() {
         </View>
 
         {/* What's popping */}
-        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 10, marginBottom: 4 }}>
-          What's popping{store.neighborhood !== "Mumbai" ? ` in ${store.neighborhood}` : ""}
-        </Text>
-        {store.neighborhood !== "Mumbai" && !areaHasEvents && (
-          <Text style={{ fontSize: 12, color: C.textDim, paddingHorizontal: 24, marginBottom: 8 }}>Nothing tagged here yet — showing across Mumbai.</Text>
-        )}
-        <View style={{ height: 8 }} />
+        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 10, marginBottom: 12 }}>What's popping</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }} style={{ marginBottom: 16 }}>
           {TIME_FILTERS.map((t) => {
             const active = t.key === time;
