@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { C } from "@/constants/colors";
-import { HAPPENINGS, CLUBS, TIME_FILTERS, type TimeBucket, type Happening } from "@/data/happenings";
+import { HAPPENINGS, CLUBS, TIME_FILTERS, PROGRAMME_META, VIBE_META, type TimeBucket, type Happening } from "@/data/happenings";
 import { useStore } from "@/hooks/use-store";
 import { toggleSave, detectLocation } from "@/utils/store";
 import CardStack from "@/components/CardStack";
@@ -86,8 +86,22 @@ export default function NowScreen() {
   const insets = useSafeAreaInsets();
   const store = useStore();
   const [time, setTime] = useState<TimeBucket>("tonight");
+  const [tFilter, setTFilter] = useState<string>("all");
 
   useEffect(() => { detectLocation(); }, []);
+
+  const tonight = store.programmes
+    .map((p) => ({ p, club: CLUBS.find((c) => c.id === p.venueId) }))
+    .filter((x) => x.club)
+    .filter(({ p }) => tFilter === "all" || (tFilter === "packed" ? p.vibe === "packed" : p.type === tFilter));
+
+  const TONIGHT_FILTERS = [
+    { key: "all", label: "All" },
+    { key: "ladies_night", label: "💃 Ladies Night" },
+    { key: "free_drinks", label: "🍹 Free Drinks" },
+    { key: "karaoke", label: "🎤 Karaoke" },
+    { key: "packed", label: "🔥 Packed" },
+  ];
 
   const all = useMemo(() => [...store.shared, ...HAPPENINGS], [store.shared]);
   const filtered = all.filter((h) => {
@@ -115,6 +129,50 @@ export default function NowScreen() {
         {/* Clubs deck */}
         <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 24 }}>Clubs tonight</Text>
         <CardStack items={CLUBS} />
+
+        {/* Tonight — operator overlay (the moat) */}
+        <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 18, marginBottom: 12 }}>Tonight</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }} style={{ marginBottom: 12 }}>
+          {TONIGHT_FILTERS.map((f) => {
+            const active = f.key === tFilter;
+            return (
+              <Pressable key={f.key} onPress={() => setTFilter(f.key)} style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 22, backgroundColor: active ? C.accent : C.surface }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: active ? "#000" : C.textSec }}>{f.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        <View style={{ paddingHorizontal: 24, gap: 12, marginBottom: 8 }}>
+          {tonight.length === 0 ? (
+            <Text style={{ fontSize: 13, color: C.textSec, paddingVertical: 16 }}>Nothing tagged for that filter yet.</Text>
+          ) : (
+            tonight.map(({ p, club }) => {
+              const tMeta = PROGRAMME_META[p.type];
+              const vMeta = p.vibe ? VIBE_META[p.vibe] : null;
+              return (
+                <View key={p.id} style={{ flexDirection: "row", gap: 14, backgroundColor: C.surface, borderRadius: 18, padding: 12, alignItems: "center" }}>
+                  <Image source={{ uri: club!.image }} style={{ width: 56, height: 56, borderRadius: 14 }} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }} numberOfLines={1}>{club!.name}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.accentDim, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                        <Text style={{ fontSize: 11 }}>{tMeta.emoji}</Text>
+                        <Text style={{ fontSize: 11, fontWeight: "700", color: C.accent }}>{tMeta.label}</Text>
+                      </View>
+                      {vMeta && (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: vMeta.color + "22", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                          <Text style={{ fontSize: 11 }}>{vMeta.emoji}</Text>
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: vMeta.color }}>{vMeta.label}</Text>
+                        </View>
+                      )}
+                    </View>
+                    {p.note ? <Text style={{ fontSize: 12, color: C.textSec }} numberOfLines={1}>{p.note}{p.by ? ` · ${p.by}` : ""}</Text> : null}
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
 
         {/* What's popping */}
         <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 10, marginBottom: 12 }}>What's popping</Text>

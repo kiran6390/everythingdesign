@@ -326,6 +326,42 @@ export const CLUBS: Club[] = [
   { id: "c6", name: "Loft 38", area: "Andheri", rating: 4.5, image: U("photo-1554118811-1e0d58224f24") },
 ];
 
+// ---- Operator overlay (the moat): what's on tonight + live vibe, per venue ----
+export type ProgrammeType = "ladies_night" | "free_drinks" | "karaoke" | "live_music" | "dj" | "happy_hour";
+export const PROGRAMME_TYPES: ProgrammeType[] = ["ladies_night", "free_drinks", "karaoke", "live_music", "dj", "happy_hour"];
+export const PROGRAMME_META: Record<ProgrammeType, { label: string; emoji: string }> = {
+  ladies_night: { label: "Ladies Night", emoji: "💃" },
+  free_drinks: { label: "Free Drinks", emoji: "🍹" },
+  karaoke: { label: "Karaoke", emoji: "🎤" },
+  live_music: { label: "Live Music", emoji: "🎸" },
+  dj: { label: "DJ Night", emoji: "🎧" },
+  happy_hour: { label: "Happy Hour", emoji: "🍻" },
+};
+
+export type Vibe = "chill" | "filling" | "packed";
+export const VIBES: Vibe[] = ["chill", "filling", "packed"];
+export const VIBE_META: Record<Vibe, { label: string; emoji: string; color: string }> = {
+  chill: { label: "Chill", emoji: "😌", color: C.teal },
+  filling: { label: "Filling up", emoji: "📈", color: C.orange },
+  packed: { label: "Packed", emoji: "🔥", color: C.pink },
+};
+
+export type Programme = {
+  id: string;
+  venueId: string; // references a Club id
+  type: ProgrammeType;
+  vibe?: Vibe;
+  note?: string;
+  by?: string; // operator/contact name
+};
+
+export const SAMPLE_PROGRAMMES: Programme[] = [
+  { id: "pr1", venueId: "c1", type: "ladies_night", vibe: "packed", note: "Free entry for ladies till 11", by: "Rohit" },
+  { id: "pr2", venueId: "c3", type: "karaoke", vibe: "filling", note: "Open mic karaoke from 9", by: "Sana" },
+  { id: "pr3", venueId: "c4", type: "free_drinks", vibe: "chill", note: "Free drinks till 10 PM", by: "You" },
+  { id: "pr4", venueId: "c2", type: "live_music", vibe: "packed", note: "Indie band tonight", by: "Kabir" },
+];
+
 export const PEOPLE: Person[] = [
   { id: "p1", name: "Aarav", initial: "A", color: C.purple },
   { id: "p2", name: "Diya", initial: "D", color: C.orange },

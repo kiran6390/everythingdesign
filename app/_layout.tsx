@@ -13,6 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="happening/[id]" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="operator" options={{ animation: "slide_from_right" }} />
       </Stack>
     </GestureHandlerRootView>
   );

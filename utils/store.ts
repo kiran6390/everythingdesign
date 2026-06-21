@@ -1,4 +1,5 @@
-import type { Happening } from "@/data/happenings";
+import type { Happening, Programme } from "@/data/happenings";
+import { SAMPLE_PROGRAMMES } from "@/data/happenings";
 import * as db from "@/lib/db";
 import * as Location from "expo-location";
 import { nearestNeighborhood } from "@/lib/places";
@@ -11,6 +12,7 @@ type State = {
   saved: string[]; // saved happening ids
   going: string[]; // going happening ids
   shared: Happening[]; // happenings shared by the community (from server)
+  programmes: Programme[]; // operator overlay: tonight's programme + vibe per venue
 };
 
 const state: State = {
@@ -21,6 +23,7 @@ const state: State = {
   saved: [],
   going: [],
   shared: [],
+  programmes: SAMPLE_PROGRAMMES,
 };
 
 const listeners = new Set<() => void>();
@@ -127,6 +130,12 @@ export function toggleGoing(id: string) {
   state.going = on ? [...state.going, id] : state.going.filter((x) => x !== id);
   notify();
   if (state.userId) db.setSaveState(state.userId, id, "going", on).catch(() => {});
+}
+
+// Operator publishes tonight's programme + vibe for a venue (the moat data).
+export function addProgramme(p: Programme) {
+  state.programmes = [p, ...state.programmes];
+  notify();
 }
 
 // A check-in is just a "happening right now" at a venue.

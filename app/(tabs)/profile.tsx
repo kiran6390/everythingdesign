@@ -8,6 +8,7 @@ import { PEOPLE } from "@/data/happenings";
 import { supabase } from "@/lib/supabase";
 
 const MENU = [
+  { icon: "megaphone-outline", label: "Operator mode", color: C.accent },
   { icon: "bookmark-outline", label: "Saved", color: C.purple },
   { icon: "location-outline", label: "Change neighborhood", color: C.teal },
   { icon: "notifications-outline", label: "Notifications", color: C.orange },
@@ -21,6 +22,7 @@ export default function ProfileScreen() {
   const store = useStore();
 
   const handleMenu = async (label: string) => {
+    if (label === "Operator mode") router.push("/operator");
     if (label === "Saved") router.push("/(tabs)/schedule");
     if (label === "Log Out") {
       await supabase.auth.signOut();
