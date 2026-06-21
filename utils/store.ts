@@ -1,10 +1,10 @@
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import type { Happening, Programme } from "@/data/happenings";
 import { SAMPLE_PROGRAMMES } from "@/data/happenings";
 import * as db from "@/lib/db";
 import * as Location from "expo-location";
-import { nearestNeighborhood } from "@/lib/places";
+import { nearestNeighborhood, neighborhoodCenter } from "@/lib/places";
 
 // Auth-at-intent: prompt a guest to sign in (phone OTP) the first time they take a
 // key action — but never block them; the action still happens locally.
@@ -92,45 +92,59 @@ export async function hydrate(userId: string, fallbackName: string) {
 // Runs once; silently keeps the default if permission is denied or it fails.
 let locationInFlight = false;
 let locationResolved = false;
+
+// Get GPS coords. On web, expo-location is unreliable, so call the browser
+// geolocation API directly (prompts properly when triggered by a click).
+async function getPositionCoords(): Promise<{ lat: number; lng: number } | null> {
+  if (Platform.OS === "web") {
+    const nav: any = (globalThis as any).navigator;
+    if (!nav?.geolocation) return null;
+    return new Promise((resolve) => {
+      nav.geolocation.getCurrentPosition(
+        (p: any) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+        () => resolve(null),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      );
+    });
+  }
+  let { status } = await Location.getForegroundPermissionsAsync();
+  if (status !== "granted") status = (await Location.requestForegroundPermissionsAsync()).status;
+  if (status !== "granted") return null;
+  let loc = await Location.getLastKnownPositionAsync();
+  if (!loc) loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+  return loc ? { lat: loc.coords.latitude, lng: loc.coords.longitude } : null;
+}
+
 export async function detectLocation(force = false) {
-  if (force) locationResolved = false;
+  if (force) {
+    locationResolved = false;
+    locationInFlight = false; // allow re-trigger even if a prior attempt stalled
+  }
   if (locationInFlight || locationResolved) return;
   locationInFlight = true;
   try {
-    let { status } = await Location.getForegroundPermissionsAsync();
-    if (status !== "granted") {
-      status = (await Location.requestForegroundPermissionsAsync()).status;
-    }
-    if (status !== "granted") return;
+    const pos = await getPositionCoords();
+    if (!pos) return;
 
-    // fast path: last known position; fall back to a fresh fix
-    let loc = await Location.getLastKnownPositionAsync();
-    if (!loc) {
-      loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-    }
-    if (!loc) return;
-
-    state.coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+    state.coords = pos;
     notify();
 
     // deterministic: snap to nearest known Mumbai area
-    let area = nearestNeighborhood(loc.coords.latitude, loc.coords.longitude);
+    let area = nearestNeighborhood(pos.lat, pos.lng);
 
-    // fallback to reverse geocoding if outside our known set
-    if (!area) {
+    // reverse geocode fallback (native only — not supported on web)
+    if (!area && Platform.OS !== "web") {
       try {
-        const geo = await Location.reverseGeocodeAsync(loc.coords);
+        const geo = await Location.reverseGeocodeAsync({ latitude: pos.lat, longitude: pos.lng });
         const g = geo[0];
         area = g?.district || g?.subregion || g?.city || null;
       } catch {}
     }
 
-    if (area) {
-      state.neighborhood = area;
-      locationResolved = true;
-      notify();
-      if (state.userId) db.updateNeighborhood(state.userId, area).catch(() => {});
-    }
+    state.neighborhood = area || "Mumbai";
+    locationResolved = true;
+    notify();
+    if (state.userId && area) db.updateNeighborhood(state.userId, area).catch(() => {});
   } catch {
     // ignore — keep the existing neighborhood
   } finally {
@@ -145,6 +159,17 @@ export function setVibes(v: string[]) {
 
 export function setNeighborhood(n: string) {
   state.neighborhood = n;
+  notify();
+  if (state.userId) db.updateNeighborhood(state.userId, n).catch(() => {});
+}
+
+// Manual area pick — sets the neighborhood AND its centre coords, so the
+// location-based feed ("Around you") loads even when GPS is blocked.
+export function setManualArea(n: string) {
+  state.neighborhood = n;
+  const c = neighborhoodCenter(n);
+  if (c) state.coords = c;
+  locationResolved = true;
   notify();
   if (state.userId) db.updateNeighborhood(state.userId, n).catch(() => {});
 }

@@ -20,6 +20,18 @@ Deno.serve(async (req) => {
   const key = Deno.env.get("GOOGLE_PLACES_KEY");
   if (!key) return json({ error: "GOOGLE_PLACES_KEY not set" }, 500);
 
+  // Photo proxy (GET ?photo=<name>) — streams a Place photo so the API key stays server-side.
+  if (req.method === "GET") {
+    const photo = new URL(req.url).searchParams.get("photo");
+    if (!photo) return json({ error: "missing photo param" }, 400);
+    const media = `https://places.googleapis.com/v1/${photo}/media?maxWidthPx=800&key=${key}`;
+    const img = await fetch(media, { redirect: "follow" });
+    return new Response(img.body, {
+      status: img.status,
+      headers: { ...cors, "content-type": img.headers.get("content-type") ?? "image/jpeg", "cache-control": "public, max-age=86400" },
+    });
+  }
+
   let payload: { mode?: string; query?: string; lat?: number; lng?: number; radius?: number };
   try {
     payload = await req.json();
@@ -28,7 +40,7 @@ Deno.serve(async (req) => {
   }
   const { mode = "search", query, lat, lng, radius = 1500 } = payload;
 
-  const fieldMask = "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.primaryType";
+  const fieldMask = "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.primaryType,places.photos";
 
   let url: string;
   let body: unknown;
@@ -67,6 +79,7 @@ Deno.serve(async (req) => {
     lng: p.location?.longitude,
     rating: p.rating ?? null,
     type: p.primaryType ?? "place",
+    photo: p.photos?.[0]?.name ?? null,
   }));
 
   return json({ venues });

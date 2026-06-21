@@ -7,6 +7,8 @@ export type Venue = {
   lat: number;
   lon: number;
   distance: number; // metres from the user
+  rating?: number | null;
+  image?: string; // real venue photo (Google), when available
 };
 
 const OVERPASS = "https://overpass-api.de/api/interpreter";
@@ -49,6 +51,8 @@ export function formatDistance(m: number) {
 // Approx centres of Mumbai areas — used to snap GPS to a known neighborhood.
 const AREA_COORDS: { name: string; lat: number; lon: number }[] = [
   { name: "Bandra", lat: 19.0596, lon: 72.8295 },
+  { name: "Khar", lat: 19.0700, lon: 72.8360 },
+  { name: "Girgaon", lat: 18.9540, lon: 72.8150 },
   { name: "Chembur", lat: 19.0522, lon: 72.9005 },
   { name: "Lower Parel", lat: 18.9960, lon: 72.8295 },
   { name: "Andheri", lat: 19.1197, lon: 72.8468 },
@@ -65,6 +69,12 @@ const AREA_COORDS: { name: string; lat: number; lon: number }[] = [
   { name: "Sion", lat: 19.0400, lon: 72.8620 },
   { name: "Vashi", lat: 19.0770, lon: 72.9986 },
 ];
+
+// Centre coordinates of a known area (for manual neighborhood selection).
+export function neighborhoodCenter(name: string): { lat: number; lng: number } | null {
+  const a = AREA_COORDS.find((x) => x.name === name);
+  return a ? { lat: a.lat, lng: a.lon } : null;
+}
 
 // Returns the nearest known area within `maxKm`, else null.
 export function nearestNeighborhood(lat: number, lon: number, maxKm = 6): string | null {

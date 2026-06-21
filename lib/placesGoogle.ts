@@ -3,7 +3,7 @@ import { haversine, nearestNeighborhood, type Venue } from "@/lib/places";
 
 const FN = `${SUPABASE_URL}/functions/v1/smooth-processor`;
 
-type RawVenue = { id: string; name: string; address: string; lat: number; lng: number; rating: number | null; type: string };
+type RawVenue = { id: string; name: string; address: string; lat: number; lng: number; rating: number | null; type: string; photo?: string | null };
 
 async function call(payload: Record<string, unknown>): Promise<RawVenue[]> {
   const r = await fetch(FN, {
@@ -21,7 +21,16 @@ export async function googleNearby(lat: number, lng: number, radius = 1500): Pro
   const raw = await call({ mode: "nearby", lat, lng, radius });
   return raw
     .filter((v) => v.lat != null && v.lng != null && v.name)
-    .map((v) => ({ id: v.id, name: v.name, type: v.type, lat: v.lat, lon: v.lng, distance: haversine(lat, lng, v.lat, v.lng) }))
+    .map((v) => ({
+      id: v.id,
+      name: v.name,
+      type: v.type,
+      lat: v.lat,
+      lon: v.lng,
+      distance: haversine(lat, lng, v.lat, v.lng),
+      rating: v.rating,
+      image: v.photo ? `${FN}?photo=${encodeURIComponent(v.photo)}` : undefined,
+    }))
     .sort((a, b) => a.distance - b.distance);
 }
 
