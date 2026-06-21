@@ -14,19 +14,24 @@ const MENU = [
   { icon: "notifications-outline", label: "Notifications", color: C.orange },
   { icon: "shield-outline", label: "Privacy", color: C.pink },
   { icon: "help-circle-outline", label: "Help & Support", color: C.accent },
-  { icon: "log-out-outline", label: "Log Out", color: "#888" },
 ];
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const store = useStore();
 
+  const authItem = store.userId
+    ? { icon: "log-out-outline", label: "Log Out", color: "#888" }
+    : { icon: "log-in-outline", label: "Sign in", color: C.accent };
+  const menu = [...MENU, authItem];
+
   const handleMenu = async (label: string) => {
     if (label === "Operator mode") router.push("/operator");
     if (label === "Saved") router.push("/(tabs)/schedule");
+    if (label === "Sign in") router.push("/(onboarding)/phone");
     if (label === "Log Out") {
       await supabase.auth.signOut();
-      router.replace("/(onboarding)");
+      router.replace("/(onboarding)/phone");
     }
   };
 
@@ -86,11 +91,11 @@ export default function ProfileScreen() {
 
         {/* Menu */}
         <View style={{ backgroundColor: C.surface, borderRadius: 20, overflow: "hidden", borderWidth: 1, borderColor: C.border }}>
-          {MENU.map((item, i) => (
+          {menu.map((item, i) => (
             <Pressable
               key={item.label}
               onPress={() => handleMenu(item.label)}
-              style={{ flexDirection: "row", alignItems: "center", padding: 18, gap: 14, borderBottomWidth: i < MENU.length - 1 ? 1 : 0, borderBottomColor: C.border }}
+              style={{ flexDirection: "row", alignItems: "center", padding: 18, gap: 14, borderBottomWidth: i < menu.length - 1 ? 1 : 0, borderBottomColor: C.border }}
             >
               <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center" }}>
                 <Ionicons name={item.icon as any} size={18} color={item.color} />

@@ -1,8 +1,7 @@
 import { Redirect } from "expo-router";
 
-// TEMP: auth disabled — land straight on the home feed as a guest.
-// To re-enable auth, change the href to "/(onboarding)" and restore the
-// session check in _layout.tsx.
+// Open straight on the home feed. (To re-enable first-run onboarding, redirect to
+// "/(onboarding)/slides" for new users — see git history for the flag-based version.)
 export default function Index() {
   return <Redirect href="/(tabs)" />;
 }

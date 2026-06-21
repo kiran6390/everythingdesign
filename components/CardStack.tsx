@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { C } from "@/constants/colors";
 import type { Club } from "@/data/happenings";
 
-const { width } = Dimensions.get("window");
+const width = Math.min(Dimensions.get("window").width, 480); // clamp to the app column
 const CARD_W = Math.min(310, width * 0.82);
 const CARD_H = CARD_W * 1.4;
 const THRESHOLD = 80;

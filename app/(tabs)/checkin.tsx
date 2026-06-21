@@ -7,6 +7,7 @@ import * as Location from "expo-location";
 import { C } from "@/constants/colors";
 import { checkInAt } from "@/utils/store";
 import { fetchNearbyVenues, venueEmoji, prettyType, formatDistance, type Venue } from "@/lib/places";
+import { googleNearby } from "@/lib/placesGoogle";
 import type { Happening } from "@/data/happenings";
 
 const NIGHTLIFE = new Set(["bar", "pub", "nightclub", "biergarten"]);
@@ -58,7 +59,14 @@ export default function CheckinScreen() {
         if (g) setNeighborhood(g.district || g.subregion || g.city || "Mumbai");
       } catch {}
 
-      const found = await fetchNearbyVenues(latitude, longitude);
+      // Prefer Google Places (richer); fall back to free OpenStreetMap.
+      let found: Venue[] = [];
+      try {
+        found = await googleNearby(latitude, longitude);
+      } catch {
+        found = [];
+      }
+      if (!found.length) found = await fetchNearbyVenues(latitude, longitude);
       setVenues(found);
       setStatus("ready");
     } catch {

@@ -1,14 +1,16 @@
-import { Image, ImageBackground, Pressable, ScrollView, Text, View } from "react-native";
+import { Image, ImageBackground, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { C } from "@/constants/colors";
-import { HAPPENINGS, CLUBS, TIME_FILTERS, PROGRAMME_META, VIBE_META, type TimeBucket, type Happening } from "@/data/happenings";
+import { HAPPENINGS, CLUBS, NEIGHBORHOODS, TIME_FILTERS, PROGRAMME_META, VIBE_META, type TimeBucket, type Happening } from "@/data/happenings";
 import { useStore } from "@/hooks/use-store";
-import { toggleSave, detectLocation } from "@/utils/store";
+import { toggleSave, detectLocation, setNeighborhood } from "@/utils/store";
 import CardStack from "@/components/CardStack";
+import { googleNearby } from "@/lib/placesGoogle";
+import { fetchNearbyVenues, venueEmoji, prettyType, formatDistance, type Venue } from "@/lib/places";
 
 function BigCard({ item }: { item: Happening }) {
   const store = useStore();
@@ -87,12 +89,39 @@ export default function NowScreen() {
   const store = useStore();
   const [time, setTime] = useState<TimeBucket>("tonight");
   const [tFilter, setTFilter] = useState<string>("all");
+  const [nearby, setNearby] = useState<Venue[]>([]);
+  const [showLoc, setShowLoc] = useState(false);
 
+  // prompt for location on entry
   useEffect(() => { detectLocation(); }, []);
 
+  // once we have coords, load real venues around the user (Google → OSM fallback)
+  useEffect(() => {
+    if (!store.coords || nearby.length) return;
+    const { lat, lng } = store.coords;
+    (async () => {
+      try {
+        let v = await googleNearby(lat, lng);
+        if (!v.length) v = await fetchNearbyVenues(lat, lng);
+        setNearby(v.slice(0, 12));
+      } catch {
+        try { setNearby((await fetchNearbyVenues(lat, lng)).slice(0, 12)); } catch {}
+      }
+    })();
+  }, [store.coords]);
+
   const tonight = store.programmes
-    .map((p) => ({ p, club: CLUBS.find((c) => c.id === p.venueId) }))
-    .filter((x) => x.club)
+    .map((p) => {
+      const club = CLUBS.find((c) => c.id === p.venueId);
+      return {
+        p,
+        venue: {
+          name: club?.name ?? p.venueName ?? "Venue",
+          area: club?.area ?? p.venueArea ?? "Mumbai",
+          image: club?.image ?? p.venueImage,
+        },
+      };
+    })
     .filter(({ p }) => tFilter === "all" || (tFilter === "packed" ? p.vibe === "packed" : p.type === tFilter));
 
   const TONIGHT_FILTERS = [
@@ -104,10 +133,14 @@ export default function NowScreen() {
   ];
 
   const all = useMemo(() => [...store.shared, ...HAPPENINGS], [store.shared]);
-  const filtered = all.filter((h) => {
-    const matchTime = h.timeBucket === time;
-    return matchTime;
-  });
+  const filtered = all
+    .filter((h) => h.timeBucket === time)
+    .sort((a, b) => {
+      // surface the user's interests first
+      const av = store.vibes.length && store.vibes.includes(a.category) ? 0 : 1;
+      const bv = store.vibes.length && store.vibes.includes(b.category) ? 0 : 1;
+      return av - bv;
+    });
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -118,13 +151,68 @@ export default function NowScreen() {
             <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.accent, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ fontSize: 18, fontWeight: "900", color: "#000" }}>{(store.userName[0] || "?").toUpperCase()}</Text>
             </View>
-            <Text style={{ fontSize: 22, fontWeight: "900", color: C.text }} numberOfLines={1}>Hi, {store.userName}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 21, fontWeight: "900", color: C.text }} numberOfLines={1}>Hi, {store.userName}</Text>
+              <Pressable onPress={() => setShowLoc((s) => !s)} hitSlop={8} style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+                <Ionicons name="location" size={13} color={C.accent} />
+                <Text style={{ fontSize: 12, color: C.textSec, fontWeight: "600" }} numberOfLines={1}>
+                  {store.coords ? `${store.neighborhood}, Mumbai` : "Finding your area…"}
+                </Text>
+                <Ionicons name="chevron-down" size={12} color={C.textSec} />
+              </Pressable>
+            </View>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <CircleBtn icon="search" onPress={() => router.push("/(tabs)/explore")} />
             <CircleBtn icon="heart-outline" onPress={() => router.push("/(tabs)/schedule")} />
           </View>
         </View>
+
+        {/* Location picker */}
+        {showLoc && (
+          <View style={{ marginHorizontal: 24, marginTop: 12, backgroundColor: C.surface, borderRadius: 16, padding: 14, gap: 12 }}>
+            <Pressable
+              onPress={() => { detectLocation(true); setShowLoc(false); }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Ionicons name="navigate" size={16} color={C.accent} />
+              <Text style={{ fontSize: 14, fontWeight: "700", color: C.accent }}>Use my current location</Text>
+            </Pressable>
+            <View style={{ height: 1, backgroundColor: C.border }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {NEIGHBORHOODS.filter((n) => n !== "All").map((n) => {
+                const on = n === store.neighborhood;
+                return (
+                  <Pressable key={n} onPress={() => { setNeighborhood(n); setShowLoc(false); }} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: on ? C.accent : C.surface2 }}>
+                    <Text style={{ fontSize: 13, fontWeight: "700", color: on ? "#000" : C.textSec }}>{n}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Around you — real venues near the user */}
+        {nearby.length > 0 && (
+          <>
+            <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 22, marginBottom: 12 }}>Around you</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }} style={{ marginBottom: 4 }}>
+              {nearby.map((v) => (
+                <Pressable
+                  key={v.id}
+                  onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}&query_place_id=${v.id}`)}
+                  style={{ width: 150, backgroundColor: C.surface, borderRadius: 18, padding: 12, gap: 8 }}
+                >
+                  <View style={{ height: 64, borderRadius: 12, backgroundColor: C.accentDim, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 30 }}>{venueEmoji(v.type)}</Text>
+                  </View>
+                  <Text style={{ fontSize: 14, fontWeight: "800", color: C.text }} numberOfLines={1}>{v.name}</Text>
+                  <Text style={{ fontSize: 12, color: C.textSec }} numberOfLines={1}>{prettyType(v.type)} · {formatDistance(v.distance)}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         {/* Clubs deck */}
         <Text style={{ fontSize: 20, fontWeight: "900", color: C.text, paddingHorizontal: 24, marginTop: 24 }}>Clubs tonight</Text>
@@ -146,14 +234,20 @@ export default function NowScreen() {
           {tonight.length === 0 ? (
             <Text style={{ fontSize: 13, color: C.textSec, paddingVertical: 16 }}>Nothing tagged for that filter yet.</Text>
           ) : (
-            tonight.map(({ p, club }) => {
+            tonight.map(({ p, venue }) => {
               const tMeta = PROGRAMME_META[p.type];
               const vMeta = p.vibe ? VIBE_META[p.vibe] : null;
               return (
                 <View key={p.id} style={{ flexDirection: "row", gap: 14, backgroundColor: C.surface, borderRadius: 18, padding: 12, alignItems: "center" }}>
-                  <Image source={{ uri: club!.image }} style={{ width: 56, height: 56, borderRadius: 14 }} />
+                  {venue.image ? (
+                    <Image source={{ uri: venue.image }} style={{ width: 56, height: 56, borderRadius: 14 }} />
+                  ) : (
+                    <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: C.accentDim, alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="location" size={24} color={C.accent} />
+                    </View>
+                  )}
                   <View style={{ flex: 1, gap: 6 }}>
-                    <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }} numberOfLines={1}>{club!.name}</Text>
+                    <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }} numberOfLines={1}>{venue.name}</Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.accentDim, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
                         <Text style={{ fontSize: 11 }}>{tMeta.emoji}</Text>

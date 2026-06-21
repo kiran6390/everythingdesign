@@ -7,9 +7,12 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
+export const SUPABASE_URL = "https://bohujtyfypijphfcrlua.supabase.co";
+export const SUPABASE_ANON = "sb_publishable_uDraEjmGZs1UFGWbZBJEFg_H9RiL_3g";
+
 export const supabase = createClient(
-  "https://bohujtyfypijphfcrlua.supabase.co",
-  "sb_publishable_uDraEjmGZs1UFGWbZBJEFg_H9RiL_3g",
+  SUPABASE_URL,
+  SUPABASE_ANON,
   {
     auth: {
       storage: ExpoSecureStoreAdapter,

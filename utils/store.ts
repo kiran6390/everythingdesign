@@ -1,14 +1,34 @@
+import { Alert } from "react-native";
+import { router } from "expo-router";
 import type { Happening, Programme } from "@/data/happenings";
 import { SAMPLE_PROGRAMMES } from "@/data/happenings";
 import * as db from "@/lib/db";
 import * as Location from "expo-location";
 import { nearestNeighborhood } from "@/lib/places";
 
+// Auth-at-intent: prompt a guest to sign in (phone OTP) the first time they take a
+// key action — but never block them; the action still happens locally.
+let signInPrompted = false;
+function softAuthPrompt() {
+  if (state.userId || signInPrompted) return;
+  signInPrompted = true;
+  Alert.alert(
+    "Keep your plans?",
+    "Sign in with your number to save your check-ins, saves and plans across devices.",
+    [
+      { text: "Not now", style: "cancel" },
+      { text: "Sign in", onPress: () => router.push("/(onboarding)/phone") },
+    ]
+  );
+}
+
 type State = {
   onboarded: boolean;
   userId: string | null; // null in guest mode
   userName: string;
   neighborhood: string;
+  coords: { lat: number; lng: number } | null; // user's GPS, once resolved
+  vibes: string[]; // interests (categories) picked in onboarding
   saved: string[]; // saved happening ids
   going: string[]; // going happening ids
   shared: Happening[]; // happenings shared by the community (from server)
@@ -20,6 +40,8 @@ const state: State = {
   userId: null,
   userName: "there",
   neighborhood: "Bandra",
+  coords: null,
+  vibes: [],
   saved: [],
   going: [],
   shared: [],
@@ -70,7 +92,8 @@ export async function hydrate(userId: string, fallbackName: string) {
 // Runs once; silently keeps the default if permission is denied or it fails.
 let locationInFlight = false;
 let locationResolved = false;
-export async function detectLocation() {
+export async function detectLocation(force = false) {
+  if (force) locationResolved = false;
   if (locationInFlight || locationResolved) return;
   locationInFlight = true;
   try {
@@ -86,6 +109,9 @@ export async function detectLocation() {
       loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
     }
     if (!loc) return;
+
+    state.coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+    notify();
 
     // deterministic: snap to nearest known Mumbai area
     let area = nearestNeighborhood(loc.coords.latitude, loc.coords.longitude);
@@ -112,6 +138,11 @@ export async function detectLocation() {
   }
 }
 
+export function setVibes(v: string[]) {
+  state.vibes = v;
+  notify();
+}
+
 export function setNeighborhood(n: string) {
   state.neighborhood = n;
   notify();
@@ -123,6 +154,7 @@ export function toggleSave(id: string) {
   state.saved = on ? [...state.saved, id] : state.saved.filter((x) => x !== id);
   notify();
   if (state.userId) db.setSaveState(state.userId, id, "saved", on).catch(() => {});
+  if (on) softAuthPrompt();
 }
 
 export function toggleGoing(id: string) {
@@ -130,12 +162,14 @@ export function toggleGoing(id: string) {
   state.going = on ? [...state.going, id] : state.going.filter((x) => x !== id);
   notify();
   if (state.userId) db.setSaveState(state.userId, id, "going", on).catch(() => {});
+  if (on) softAuthPrompt();
 }
 
 // Operator publishes tonight's programme + vibe for a venue (the moat data).
 export function addProgramme(p: Programme) {
   state.programmes = [p, ...state.programmes];
   notify();
+  softAuthPrompt();
 }
 
 // A check-in is just a "happening right now" at a venue.
@@ -146,6 +180,7 @@ export function checkInAt(h: Happening) {
     notify();
     if (state.userId) db.setSaveState(state.userId, h.id, "going", true).catch(() => {});
   }
+  softAuthPrompt();
 }
 
 export function addPosted(h: Happening) {

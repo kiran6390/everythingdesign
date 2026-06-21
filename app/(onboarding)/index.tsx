@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/constants/colors";
 import { setOnboarded } from "@/utils/store";
+import { setFlag, ONBOARDED_KEY } from "@/utils/persist";
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
@@ -58,6 +59,7 @@ export default function WelcomeScreen() {
         <Pressable
           onPress={() => {
             setOnboarded("there");
+            setFlag(ONBOARDED_KEY, "1");
             router.replace("/(tabs)");
           }}
           style={{ alignItems: "center", paddingVertical: 4 }}

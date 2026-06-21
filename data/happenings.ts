@@ -1,62 +1,51 @@
-// Mumbai Now — seed data for "what's happening in Mumbai"
-// v1 uses curated mock data. Next step: feed from Supabase + live sources.
+// GetIn — seed data for "what's happening in Mumbai".
+// Real Mumbai venues + neighbourhoods; events are illustrative/recurring.
+// Images are licence-free stock (Unsplash), not the actual venues' photos.
+import { C } from "@/constants/colors";
 
 export type TimeBucket = "now" | "tonight" | "weekend";
 
 export type Happening = {
   id: string;
   title: string;
-  category: string; // see CATEGORIES
-  neighborhood: string; // see NEIGHBORHOODS
+  category: string;
+  neighborhood: string;
   venue: string;
-  address: string; // used to open Google Maps
-  when: string; // human readable, e.g. "Tonight · 9 PM"
+  address: string;
+  when: string;
   timeBucket: TimeBucket;
-  price: string; // "Free", "₹500", ...
+  price: string;
   emoji: string;
-  color: string; // accent color from the palette
-  hype: number; // people going / interested
-  vibe: string; // Chill | Loud | Artsy | Foodie | Outdoorsy
+  color: string;
+  hype: number;
+  vibe: string;
   host: string;
   description: string;
   tags: string[];
-  image?: string; // cover photo; user check-ins fall back to emoji
-  mine?: boolean; // true if the signed-in user created it
+  image?: string;
+  mine?: boolean;
 };
 
-export type Person = {
-  id: string;
-  name: string;
-  initial: string;
-  color: string;
-};
-
-import { C } from "@/constants/colors";
+export type Person = { id: string; name: string; initial: string; color: string };
 
 export const NEIGHBORHOODS = [
   "All",
   "Bandra",
-  "Chembur",
+  "Khar",
   "Lower Parel",
+  "Worli",
   "Andheri",
-  "Colaba",
   "Juhu",
-  "Powai",
+  "Colaba",
   "Fort",
+  "Girgaon",
   "Versova",
   "BKC",
+  "Powai",
+  "Chembur",
 ];
 
-export const CATEGORIES = [
-  "All",
-  "Nightlife",
-  "Food",
-  "Music",
-  "Art",
-  "Markets",
-  "Outdoors",
-  "Free",
-];
+export const CATEGORIES = ["All", "Nightlife", "Food", "Music", "Art", "Markets", "Outdoors", "Free"];
 
 export const TIME_FILTERS: { key: TimeBucket; label: string }[] = [
   { key: "now", label: "Now" },
@@ -65,265 +54,152 @@ export const TIME_FILTERS: { key: TimeBucket; label: string }[] = [
 ];
 
 const U = (id: string) => `https://images.unsplash.com/${id}?w=800&q=70&auto=format&fit=crop`;
-const IMAGES: Record<string, string> = {
-  "1": U("photo-1517457373958-b7bdd4587205"), // rooftop
-  "2": U("photo-1470229722913-7c0e2dbbafd3"), // live music
-  "3": U("photo-1504674900247-0877df9cc836"), // food
-  "4": U("photo-1531058020387-3be344556be6"), // art bazaar
-  "5": U("photo-1485965120184-e220f721d03e"), // cycling
-  "6": U("photo-1585699324551-f6c309eedeca"), // comedy
-  "7": U("photo-1507525428034-b723cf961d3e"), // beach
-  "8": U("photo-1511192336575-5a79af67a629"), // jazz
-  "9": U("photo-1565123409695-7b5ef63a2efb"), // food truck
-  "10": U("photo-1566737236500-c8ac43014a67"), // gallery night
-  "11": U("photo-1599447421416-3414500d18a5"), // yoga
-  "12": U("photo-1545128485-c400e7702796"), // techno
+const IMG = {
+  rooftop: U("photo-1517457373958-b7bdd4587205"),
+  club: U("photo-1545128485-c400e7702796"),
+  nightlife: U("photo-1566737236500-c8ac43014a67"),
+  livemusic: U("photo-1470229722913-7c0e2dbbafd3"),
+  jazz: U("photo-1511192336575-5a79af67a629"),
+  comedy: U("photo-1585699324551-f6c309eedeca"),
+  food: U("photo-1504674900247-0877df9cc836"),
+  foodtruck: U("photo-1565123409695-7b5ef63a2efb"),
+  cafe: U("photo-1554118811-1e0d58224f24"),
+  art: U("photo-1531058020387-3be344556be6"),
+  cycling: U("photo-1485965120184-e220f721d03e"),
+  beach: U("photo-1507525428034-b723cf961d3e"),
+  yoga: U("photo-1599447421416-3414500d18a5"),
 };
 
-const BASE_HAPPENINGS: Happening[] = [
+export const HAPPENINGS: Happening[] = [
   {
-    id: "1",
-    title: "Rooftop Sundowner & House DJ",
-    category: "Nightlife",
-    neighborhood: "Bandra",
-    venue: "Bay View Rooftop",
-    address: "Bay View Rooftop, Bandra West, Mumbai",
-    when: "Tonight · 7 PM",
-    timeBucket: "tonight",
-    price: "₹800",
-    emoji: "🌆",
-    color: C.accent,
-    hype: 312,
-    vibe: "Chill",
-    host: "Bay View",
-    description:
-      "Golden-hour views over the bay with a resident house DJ, craft cocktails and small plates. Gets packed after 8 — come early for the sunset seats.",
-    tags: ["Rooftop", "DJ", "Cocktails", "Sunset"],
+    id: "1", title: "Sundowner on the 34th floor", category: "Nightlife", neighborhood: "Worli",
+    venue: "AER, Four Seasons", address: "AER, Four Seasons Hotel, Worli, Mumbai", when: "Tonight · 6 PM",
+    timeBucket: "tonight", price: "₹2000", emoji: "🌆", color: C.accent, hype: 420, vibe: "Chill", host: "AER",
+    description: "Mumbai's highest rooftop — Arabian Sea views, art-deco interiors and a retractable roof. Come for golden hour, stay for the resident DJ.",
+    tags: ["Rooftop", "Cocktails", "Sunset", "Views"], image: IMG.rooftop,
   },
   {
-    id: "2",
-    title: "Indie Gig: The Local Train + opener",
-    category: "Music",
-    neighborhood: "Lower Parel",
-    venue: "antiSOCIAL",
-    address: "antiSOCIAL, Lower Parel, Mumbai",
-    when: "Tonight · 9 PM",
-    timeBucket: "tonight",
-    price: "₹600",
-    emoji: "🎸",
-    color: C.pink,
-    hype: 540,
-    vibe: "Loud",
-    host: "antiSOCIAL",
-    description:
-      "One of the city's best loved indie acts live, with a fresh opener from the Mumbai underground. Standing room, loud, sweaty, brilliant.",
-    tags: ["Live Music", "Indie", "Standing"],
+    id: "2", title: "Techno & deep house all night", category: "Nightlife", neighborhood: "Lower Parel",
+    venue: "Matahaari", address: "Matahaari, Lower Parel, Mumbai", when: "Tonight · 10 PM",
+    timeBucket: "tonight", price: "₹1500", emoji: "🔊", color: C.pink, hype: 380, vibe: "Loud", host: "Matahaari",
+    description: "Lower Parel's home for techno and deep house, with baos and sushi to keep you going. Dark room, big system, late nights.",
+    tags: ["Techno", "Deep House", "Club", "Late Night"], image: IMG.club,
   },
   {
-    id: "3",
-    title: "Bandra Street Food Crawl",
-    category: "Food",
-    neighborhood: "Bandra",
-    venue: "Carter Road → Pali Naka",
-    address: "Carter Road, Bandra West, Mumbai",
-    when: "Right now",
-    timeBucket: "now",
-    price: "₹500",
-    emoji: "🌯",
-    color: C.orange,
-    hype: 128,
-    vibe: "Foodie",
-    host: "Mumbai Foodies",
-    description:
-      "Hop between the best rolls, kebabs and dessert carts from Carter Road to Pali Naka. A loose, walk-up crawl — join the group or freestyle it.",
-    tags: ["Street Food", "Walk", "Cheap Eats"],
+    id: "3", title: "Saturday at antiSOCIAL", category: "Music", neighborhood: "Lower Parel",
+    venue: "antiSOCIAL", address: "antiSOCIAL, Mathuradas Mill Compound, Lower Parel, Mumbai", when: "Sat · 9 PM",
+    timeBucket: "weekend", price: "₹800", emoji: "🎶", color: C.purple, hype: 540, vibe: "Loud", host: "antiSOCIAL",
+    description: "The warehouse home of Mumbai's underground — electronic, hip-hop and indie acts on a world-class sound system.",
+    tags: ["Live Music", "Indie", "Electronic"], image: IMG.nightlife,
   },
   {
-    id: "4",
-    title: "Sunday Art Bazaar",
-    category: "Markets",
-    neighborhood: "Colaba",
-    venue: "Kala Ghoda",
-    address: "Kala Ghoda, Fort, Mumbai",
-    when: "Sat–Sun · 11 AM",
-    timeBucket: "weekend",
-    price: "Free",
-    emoji: "🎨",
-    color: C.purple,
-    hype: 210,
-    vibe: "Artsy",
-    host: "Kala Ghoda Collective",
-    description:
-      "Independent artists, zines, prints, ceramics and live sketching across the Kala Ghoda lanes. Great for a slow weekend wander.",
-    tags: ["Art", "Shopping", "Free", "Weekend"],
+    id: "4", title: "Live indie under the umbrellas", category: "Music", neighborhood: "Bandra",
+    venue: "Bonobo", address: "Bonobo, Bandra West, Mumbai", when: "Tonight · 9 PM",
+    timeBucket: "tonight", price: "₹600", emoji: "🎸", color: C.pink, hype: 260, vibe: "Chill", host: "Bonobo",
+    description: "Bandra's beloved rooftop with mushroom umbrellas and weekend live gigs. Easy crowd, good drinks, great sound.",
+    tags: ["Live Music", "Rooftop", "Indie"], image: IMG.livemusic,
   },
   {
-    id: "5",
-    title: "Marine Drive Night Cycle",
-    category: "Outdoors",
-    neighborhood: "Fort",
-    venue: "Marine Drive Promenade",
-    address: "Marine Drive, Mumbai",
-    when: "Tonight · 11 PM",
-    timeBucket: "tonight",
-    price: "Free",
-    emoji: "🚲",
-    color: C.teal,
-    hype: 86,
-    vibe: "Outdoorsy",
-    host: "Mumbai Night Riders",
-    description:
-      "Late-night group cycle along an empty Marine Drive and down to the Gateway. Bring your own ride. Cool breeze, zero traffic, great crew.",
-    tags: ["Cycling", "Free", "Late Night"],
+    id: "5", title: "Gig night at Above The Habitat", category: "Music", neighborhood: "Khar",
+    venue: "Above The Habitat", address: "Above The Habitat, Khar West, Mumbai", when: "Tonight · 8:30 PM",
+    timeBucket: "tonight", price: "₹700", emoji: "🎤", color: C.purple, hype: 180, vibe: "Chill", host: "Above The Habitat",
+    description: "Intimate ~250-cap room that's become a lifeline for Mumbai's live scene. Up-close sets from indie and experimental acts.",
+    tags: ["Live Music", "Intimate", "Indie"], image: IMG.jazz,
   },
   {
-    id: "6",
-    title: "Comedy Open Mic",
-    category: "Nightlife",
-    neighborhood: "Andheri",
-    venue: "The Habitat",
-    address: "The Habitat, Andheri West, Mumbai",
-    when: "Tonight · 8 PM",
-    timeBucket: "tonight",
-    price: "₹300",
-    emoji: "🎤",
-    color: C.accent,
-    hype: 174,
-    vibe: "Chill",
-    host: "The Habitat",
-    description:
-      "Mumbai's legendary open mic — new comics, working pros testing material, and the odd surprise headliner. Cheap, fun, unpredictable.",
-    tags: ["Comedy", "Open Mic", "Cheap"],
+    id: "6", title: "Comedy Open Mic", category: "Nightlife", neighborhood: "Khar",
+    venue: "The Habitat", address: "The Habitat, Khar West, Mumbai", when: "Tonight · 7 & 9 PM",
+    timeBucket: "tonight", price: "₹300", emoji: "🎙️", color: C.accent, hype: 150, vibe: "Chill", host: "The Habitat",
+    description: "Mumbai's legendary open mic — new comics, working pros testing material and the odd surprise drop-in. Cheap and unpredictable.",
+    tags: ["Comedy", "Open Mic", "Cheap"], image: IMG.comedy,
   },
   {
-    id: "7",
-    title: "Versova Beach Cleanup + Chai",
-    category: "Outdoors",
-    neighborhood: "Versova",
-    venue: "Versova Beach",
-    address: "Versova Beach, Andheri West, Mumbai",
-    when: "Sat · 7 AM",
-    timeBucket: "weekend",
-    price: "Free",
-    emoji: "🏖️",
-    color: C.teal,
-    hype: 64,
-    vibe: "Outdoorsy",
-    host: "Versova Beach Warriors",
-    description:
-      "Early-morning beach cleanup followed by cutting chai and good company. Do something good, meet good people, beat the heat.",
-    tags: ["Volunteering", "Beach", "Free", "Morning"],
+    id: "7", title: "Weekend stand-up special", category: "Nightlife", neighborhood: "Lower Parel",
+    venue: "Canvas Laugh Club", address: "Canvas Laugh Club, Palladium Mall, Lower Parel, Mumbai", when: "Sat · 8 PM",
+    timeBucket: "weekend", price: "₹500", emoji: "😂", color: C.orange, hype: 220, vibe: "Chill", host: "Canvas Laugh Club",
+    description: "India's OG comedy club inside Palladium. Headline sets from the names you know — book ahead, it fills up.",
+    tags: ["Comedy", "Stand-up"], image: IMG.comedy,
   },
   {
-    id: "8",
-    title: "Powai Lakeside Live Jazz",
-    category: "Music",
-    neighborhood: "Powai",
-    venue: "The Hive",
-    address: "The Hive, Powai, Mumbai",
-    when: "Tonight · 8:30 PM",
-    timeBucket: "tonight",
-    price: "₹700",
-    emoji: "🎷",
-    color: C.purple,
-    hype: 98,
-    vibe: "Chill",
-    host: "The Hive",
-    description:
-      "Intimate jazz quartet by the lake. Low lights, good wine, no phones-up crowd. Limited seating — reserve ahead.",
-    tags: ["Jazz", "Live Music", "Date Night"],
+    id: "8", title: "Jazz & cabaret night", category: "Music", neighborhood: "Girgaon",
+    venue: "The Quarter, Royal Opera House", address: "The Quarter, Royal Opera House, Girgaon, Mumbai", when: "Sat · 9 PM",
+    timeBucket: "weekend", price: "₹1000", emoji: "🎷", color: C.purple, hype: 140, vibe: "Chill", host: "The Quarter",
+    description: "Old-world glamour inside the restored Royal Opera House — live jazz, cabaret and a proper cocktail list.",
+    tags: ["Jazz", "Live Music", "Date Night"], image: IMG.jazz,
   },
   {
-    id: "9",
-    title: "BKC Food Truck Park",
-    category: "Food",
-    neighborhood: "BKC",
-    venue: "Jio Garden Grounds",
-    address: "Jio Garden, BKC, Mumbai",
-    when: "Right now",
-    timeBucket: "now",
-    price: "₹400",
-    emoji: "🚚",
-    color: C.orange,
-    hype: 256,
-    vibe: "Foodie",
-    host: "Mumbai Eats",
-    description:
-      "30+ food trucks, live music and lawn seating. Korean, tacos, Bombay-Chinese, desserts — graze your way through. Family and pet friendly.",
-    tags: ["Food Trucks", "Outdoor", "Family"],
+    id: "9", title: "Carter Road food walk", category: "Food", neighborhood: "Bandra",
+    venue: "Carter Road Promenade", address: "Carter Road, Bandra West, Mumbai", when: "Right now",
+    timeBucket: "now", price: "₹500", emoji: "🌯", color: C.orange, hype: 128, vibe: "Foodie", host: "Mumbai Foodies",
+    description: "Rolls, kebabs and dessert carts along the seafront from Carter Road toward Pali Naka. Walk it, graze it.",
+    tags: ["Street Food", "Walk", "Seafront"], image: IMG.food,
   },
   {
-    id: "10",
-    title: "Gallery Night: New Mumbai Voices",
-    category: "Art",
-    neighborhood: "Colaba",
-    venue: "Jhaveri Contemporary",
-    address: "Jhaveri Contemporary, Colaba, Mumbai",
-    when: "Tonight · 6 PM",
-    timeBucket: "tonight",
-    price: "Free",
-    emoji: "🖼️",
-    color: C.pink,
-    hype: 142,
-    vibe: "Artsy",
-    host: "Jhaveri Contemporary",
-    description:
-      "Opening night for a group show of emerging Mumbai artists. Free entry, wine, and the artists are usually around to talk through the work.",
-    tags: ["Art", "Opening", "Free"],
+    id: "10", title: "BKC food truck park", category: "Food", neighborhood: "BKC",
+    venue: "Jio Garden Grounds", address: "Jio Garden, BKC, Mumbai", when: "Right now",
+    timeBucket: "now", price: "₹400", emoji: "🚚", color: C.orange, hype: 256, vibe: "Foodie", host: "Mumbai Eats",
+    description: "Food trucks, lawn seating and live music. Korean, tacos, Bombay-Chinese, desserts — family and pet friendly.",
+    tags: ["Food Trucks", "Outdoor", "Family"], image: IMG.foodtruck,
   },
   {
-    id: "11",
-    title: "Sunrise Yoga at Juhu Beach",
-    category: "Outdoors",
-    neighborhood: "Juhu",
-    venue: "Juhu Beach",
-    address: "Juhu Beach, Mumbai",
-    when: "Sun · 6:15 AM",
-    timeBucket: "weekend",
-    price: "₹200",
-    emoji: "🧘",
-    color: C.teal,
-    hype: 73,
-    vibe: "Chill",
-    host: "Beach Flow Collective",
-    description:
-      "Slow flow on the sand as the sun comes up, finishing with breathwork. All levels welcome. Mats provided.",
-    tags: ["Yoga", "Beach", "Morning"],
+    id: "11", title: "Specialty coffee & work", category: "Food", neighborhood: "Bandra",
+    venue: "Subko Coffee", address: "Subko, Bandra West, Mumbai", when: "Open now",
+    timeBucket: "now", price: "₹300", emoji: "☕", color: C.teal, hype: 64, vibe: "Chill", host: "Subko",
+    description: "Single-origin roasts and bakehouse pastries in a calm, design-y space. Good wifi, good people-watching.",
+    tags: ["Coffee", "Work-friendly", "Brunch"], image: IMG.cafe,
   },
   {
-    id: "12",
-    title: "Late Night Techno: Basement Session",
-    category: "Nightlife",
-    neighborhood: "Lower Parel",
-    venue: "Kitty Su",
-    address: "Kitty Su, Lower Parel, Mumbai",
-    when: "Tonight · 11 PM",
-    timeBucket: "tonight",
-    price: "₹1200",
-    emoji: "🔊",
-    color: C.accent,
-    hype: 430,
-    vibe: "Loud",
-    host: "Kitty Su",
-    description:
-      "International techno headliner with local support till late. Dark room, big sound system. Doors at 11, peaks around 2.",
-    tags: ["Techno", "Club", "Late Night"],
+    id: "12", title: "Sunday brunch & books", category: "Food", neighborhood: "Bandra",
+    venue: "Poetry by Love & Cheesecake", address: "Poetry by Love & Cheesecake, Bandra West, Mumbai", when: "Sun · 11 AM",
+    timeBucket: "weekend", price: "₹900", emoji: "🥐", color: C.teal, hype: 90, vibe: "Chill", host: "Poetry",
+    description: "Cosy nooks, bookshelves and a lazy weekend brunch. Grab a corner and stay too long.",
+    tags: ["Brunch", "Cafe", "Cosy"], image: IMG.cafe,
+  },
+  {
+    id: "13", title: "Gallery opening night", category: "Art", neighborhood: "Colaba",
+    venue: "Jhaveri Contemporary", address: "Jhaveri Contemporary, Colaba, Mumbai", when: "Tonight · 6 PM",
+    timeBucket: "tonight", price: "Free", emoji: "🖼️", color: C.purple, hype: 110, vibe: "Artsy", host: "Jhaveri Contemporary",
+    description: "Opening for a new contemporary show in Colaba's gallery district. Free entry, wine, and artists usually around.",
+    tags: ["Art", "Opening", "Free"], image: IMG.art,
+  },
+  {
+    id: "14", title: "Kala Ghoda art walk", category: "Art", neighborhood: "Fort",
+    venue: "Kala Ghoda", address: "Kala Ghoda, Fort, Mumbai", when: "Sat–Sun · 11 AM",
+    timeBucket: "weekend", price: "Free", emoji: "🎨", color: C.purple, hype: 210, vibe: "Artsy", host: "Kala Ghoda Association",
+    description: "Galleries, street art, museums and indie stores across the Kala Ghoda lanes. Perfect slow weekend wander.",
+    tags: ["Art", "Walk", "Free", "Weekend"], image: IMG.art,
+  },
+  {
+    id: "15", title: "Marine Drive night cycle", category: "Outdoors", neighborhood: "Fort",
+    venue: "Marine Drive Promenade", address: "Marine Drive, Mumbai", when: "Sat · 11 PM",
+    timeBucket: "weekend", price: "Free", emoji: "🚲", color: C.teal, hype: 86, vibe: "Outdoorsy", host: "Mumbai Night Riders",
+    description: "Late-night group ride down an empty Marine Drive to the Gateway. Bring your own ride. Cool breeze, zero traffic.",
+    tags: ["Cycling", "Free", "Late Night"], image: IMG.cycling,
+  },
+  {
+    id: "16", title: "Versova beach cleanup + chai", category: "Outdoors", neighborhood: "Versova",
+    venue: "Versova Beach", address: "Versova Beach, Andheri West, Mumbai", when: "Sun · 7 AM",
+    timeBucket: "weekend", price: "Free", emoji: "🏖️", color: C.teal, hype: 64, vibe: "Outdoorsy", host: "Versova Beach Warriors",
+    description: "Early cleanup followed by cutting chai and good company. Do some good, meet good people, beat the heat.",
+    tags: ["Volunteering", "Beach", "Free", "Morning"], image: IMG.beach,
+  },
+  {
+    id: "17", title: "Sunrise yoga at Juhu Beach", category: "Outdoors", neighborhood: "Juhu",
+    venue: "Juhu Beach", address: "Juhu Beach, Mumbai", when: "Sun · 6:15 AM",
+    timeBucket: "weekend", price: "₹200", emoji: "🧘", color: C.teal, hype: 73, vibe: "Chill", host: "Beach Flow Collective",
+    description: "Slow flow on the sand as the sun comes up, finishing with breathwork. All levels, mats provided.",
+    tags: ["Yoga", "Beach", "Morning"], image: IMG.yoga,
   },
 ];
 
-export const HAPPENINGS: Happening[] = BASE_HAPPENINGS.map((h) => ({
-  ...h,
-  image: IMAGES[h.id],
-}));
-
 export type Club = { id: string; name: string; area: string; rating: number; image: string };
 export const CLUBS: Club[] = [
-  { id: "c1", name: "Kitty Su", area: "Lower Parel", rating: 4.7, image: U("photo-1545128485-c400e7702796") },
-  { id: "c2", name: "antiSOCIAL", area: "Lower Parel", rating: 4.6, image: U("photo-1470229722913-7c0e2dbbafd3") },
-  { id: "c3", name: "Bonobo", area: "Bandra", rating: 4.5, image: U("photo-1566737236500-c8ac43014a67") },
-  { id: "c4", name: "Bay View Rooftop", area: "Bandra", rating: 4.8, image: U("photo-1517457373958-b7bdd4587205") },
-  { id: "c5", name: "The Blue Room", area: "Powai", rating: 4.4, image: U("photo-1511192336575-5a79af67a629") },
-  { id: "c6", name: "Loft 38", area: "Andheri", rating: 4.5, image: U("photo-1554118811-1e0d58224f24") },
+  { id: "c1", name: "antiSOCIAL", area: "Lower Parel", rating: 4.5, image: IMG.club },
+  { id: "c2", name: "Bonobo", area: "Bandra", rating: 4.4, image: IMG.livemusic },
+  { id: "c3", name: "AER", area: "Worli", rating: 4.7, image: IMG.rooftop },
+  { id: "c4", name: "Asilo", area: "Lower Parel", rating: 4.6, image: IMG.nightlife },
+  { id: "c5", name: "Above The Habitat", area: "Khar", rating: 4.5, image: IMG.jazz },
+  { id: "c6", name: "Matahaari", area: "Lower Parel", rating: 4.3, image: IMG.club },
 ];
 
 // ---- Operator overlay (the moat): what's on tonight + live vibe, per venue ----
@@ -348,18 +224,24 @@ export const VIBE_META: Record<Vibe, { label: string; emoji: string; color: stri
 
 export type Programme = {
   id: string;
-  venueId: string; // references a Club id
+  venueId: string; // a Club id, or a Google place_id
   type: ProgrammeType;
   vibe?: Vibe;
   note?: string;
-  by?: string; // operator/contact name
+  by?: string;
+  // denormalised venue info (set when the venue isn't one of the fixed CLUBS,
+  // e.g. picked from Google Places in the operator screen)
+  venueName?: string;
+  venueArea?: string;
+  venueImage?: string;
 };
 
 export const SAMPLE_PROGRAMMES: Programme[] = [
-  { id: "pr1", venueId: "c1", type: "ladies_night", vibe: "packed", note: "Free entry for ladies till 11", by: "Rohit" },
-  { id: "pr2", venueId: "c3", type: "karaoke", vibe: "filling", note: "Open mic karaoke from 9", by: "Sana" },
-  { id: "pr3", venueId: "c4", type: "free_drinks", vibe: "chill", note: "Free drinks till 10 PM", by: "You" },
-  { id: "pr4", venueId: "c2", type: "live_music", vibe: "packed", note: "Indie band tonight", by: "Kabir" },
+  { id: "pr1", venueId: "c1", type: "dj", vibe: "packed", note: "International techno headliner tonight", by: "Rohit" },
+  { id: "pr2", venueId: "c4", type: "ladies_night", vibe: "packed", note: "Ladies free entry till 11", by: "Kabir" },
+  { id: "pr3", venueId: "c2", type: "live_music", vibe: "filling", note: "Indie band from 9 PM", by: "Sana" },
+  { id: "pr4", venueId: "c3", type: "happy_hour", vibe: "chill", note: "2-for-1 cocktails till 8", by: "You" },
+  { id: "pr5", venueId: "c6", type: "free_drinks", vibe: "filling", note: "Free shots till 10", by: "Aisha" },
 ];
 
 export const PEOPLE: Person[] = [

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "@/constants/colors";
-import { setOnboarded } from "@/utils/store";
+import { hydrate, setOnboarded } from "@/utils/store";
 import { supabase } from "@/lib/supabase";
 
 export default function OtpScreen() {
@@ -47,8 +47,9 @@ export default function OtpScreen() {
       Alert.alert("Invalid code", error.message);
       return;
     }
-    const userName = name || data.user?.user_metadata?.full_name || "Designer";
-    setOnboarded(userName);
+    const userName = (name || data.user?.user_metadata?.full_name || "there").split(" ")[0];
+    if (data.user) hydrate(data.user.id, userName);
+    else setOnboarded(userName);
     router.replace("/(tabs)");
   };
 
